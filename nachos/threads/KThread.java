@@ -203,6 +203,10 @@ public class KThread {
 
 		currentThread.status = statusFinished;
 
+		KThread thread = currentThread.joinThread;
+		if (thread != null)
+			currentThread.joinThread.ready();
+
 		sleep();
 	}
 
@@ -284,7 +288,17 @@ public class KThread {
 		Lib.debug(dbgThread, "Joining to thread: " + toString());
 
 		Lib.assertTrue(this != currentThread);
+		if (status == statusFinished)
+			return;
 
+		boolean intStatus = Machine.interrupt().disable();
+
+		Lib.assertTrue(joinThread == null);
+		this.joinThread = currentThread;
+
+		sleep();
+
+		Machine.interrupt().restore(intStatus);
 	}
 
 	/**
@@ -401,7 +415,18 @@ public class KThread {
 				System.out.println("*** awesome thread " + which + " looped " + i
 						+ " times");
 				currentThread.yield();
+//				t2.join();
 			}
+		}
+
+		public void run1() {
+			for (int i = 0; i < 5; i++) {
+				System.out.println("*** awesome thread " + which + " looped " + i
+						+ " times");
+//				currentThread.yield();
+				t2.join();
+			}
+
 		}
 
 		private int which;
@@ -413,9 +438,18 @@ public class KThread {
 	public static void selfTest() {
 		Lib.debug(dbgThread, "Enter KThread.selfTest");
 
-		new KThread(new PingTest(1)).setName("forked thread").fork();
-		new PingTest(0).run();
+		KThread t1 = new KThread(new PingTest(1)).setName("forked thread 1");
+		t2 = new KThread(new PingTest(2)).setName("forked thread 2");
+		PingTest t0 = new PingTest(0);
+		t1.fork();
+		t2.fork();
+		t0.run1();
+//		t2.join();
+//		new PingTest(0).run();
+
 	}
+
+	private static KThread t2 = null;
 
 	private static final char dbgThread = 't';
 
@@ -448,6 +482,8 @@ public class KThread {
 	private Runnable target;
 
 	private TCB tcb;
+
+	private KThread joinThread = null;
 
 	/**
 	 * Unique identifer for this thread. Used to deterministically compare
