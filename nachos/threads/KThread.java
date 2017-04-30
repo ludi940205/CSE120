@@ -2,6 +2,11 @@ package nachos.threads;
 
 import nachos.machine.*;
 
+import javax.swing.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
+
 /**
  * A KThread is a thread that can be used to execute Nachos kernel code. Nachos
  * allows multiple threads to run concurrently.
@@ -203,6 +208,10 @@ public class KThread {
 
 		currentThread.status = statusFinished;
 
+		KThread thread = currentThread.joinThread;
+		if (thread != null)
+			currentThread.joinThread.ready();
+
 		sleep();
 	}
 
@@ -284,7 +293,17 @@ public class KThread {
 		Lib.debug(dbgThread, "Joining to thread: " + toString());
 
 		Lib.assertTrue(this != currentThread);
+		if (status == statusFinished)
+			return;
 
+		boolean intStatus = Machine.interrupt().disable();
+
+		Lib.assertTrue(joinThread == null);
+		this.joinThread = currentThread;
+
+		sleep();
+
+		Machine.interrupt().restore(intStatus);
 	}
 
 	/**
@@ -407,15 +426,135 @@ public class KThread {
 		private int which;
 	}
 
+	private static class JoinTest implements Runnable {
+		JoinTest(int which) {
+			this.which = which;
+		}
+
+		public void run() {
+			KThread t2 = new KThread(new Runnable() {
+				@Override
+				public void run() {
+					for (int i = 0; i < 6; i++)
+						System.out.println("*** awesome thread " + 2 + " looped " + i
+								+ " times");
+				}
+			}).setName("joined thread");
+			t2.fork();
+			for (int i = 0; i < 5; i++) {
+				System.out.println("*** awesome thread " + which + " looped " + i
+						+ " times");
+				if (i == 0) t2.join();
+			}
+		}
+
+		private int which;
+	}
+
+	/**
+	 * Reader writer test for conditional variable.
+	 */
+
+	private static final int capacity = 10;
+	private static final int readNum = 1000000;
+	private static final int writeNum = 1000000;
+	private static int currCount = 0;
+	private static int writerCount = 2, readerCount = 2;
+	private static int[] buffer = new int[capacity];
+	private static int write_ptr = 0;
+	private static int read_ptr = 0;
+	private static int count = 0;
+	private static Lock mutex = new Lock();
+	private static Condition2 empty = new Condition2(mutex);
+	private static Condition2 full = new Condition2(mutex);
+//	private static Condition empty = new Condition(mutex);
+//	private static Condition full = new Condition(mutex);
+	private static List<Integer> newBuffer = new ArrayList<Integer>();
+	private static int readNotFinished = readerCount, writeNotFinished = writerCount;
+
+
+	private static class Reader implements Runnable {
+		Reader(int num) {
+			this.num = num;
+		}
+
+		public void run() {
+			for (int i = 0; i < this.num; i++) {
+				mutex.acquire();
+				while (count == 0)
+					full.sleep();
+				count--;
+//				System.out.println(buffer[read_ptr]);
+				newBuffer.add(buffer[read_ptr]);
+				read_ptr = (read_ptr + 1) % capacity;
+				empty.wake();
+				mutex.release();
+			}
+			mutex.acquire();
+			readNotFinished--;
+			mutex.release();
+		}
+
+		private int num;
+	}
+
+	private static class Writer implements Runnable {
+		Writer(int num) {
+			this.num = num;
+		}
+
+		public void run() {
+			for (int i = 0; i < this.num; i++) {
+				mutex.acquire();
+				while (count == capacity)
+					empty.sleep();
+				count++;
+				currCount++;
+				buffer[write_ptr] = currCount;
+				write_ptr = (write_ptr + 1) % capacity;
+				full.wake();
+				mutex.release();
+			}
+			mutex.acquire();
+			writeNotFinished--;
+			mutex.release();
+		}
+
+		private int num;
+	}
+
+	private static void readWriterTest() {
+		for (int i = 0; i < writerCount; i++)
+			new KThread(new Writer(writeNum)).setName("writer" + (i + 1)).fork();
+		for (int i = 0; i < readerCount; i++)
+			new KThread(new Reader(readNum)).setName("reader" + (i + 1)).fork();
+	}
+
+	private static void joinTest() {
+		new KThread(new JoinTest(1)).setName("forked thread 1").fork();
+		new PingTest(0).run();
+	}
+
 	/**
 	 * Tests whether this module is working.
 	 */
 	public static void selfTest() {
 		Lib.debug(dbgThread, "Enter KThread.selfTest");
 
-		new KThread(new PingTest(1)).setName("forked thread").fork();
-		new PingTest(0).run();
+		joinTest();
+		System.out.println("Join test finished.");
+
+		readWriterTest();
+		while (readNotFinished > 0 || writeNotFinished > 0) {
+			System.out.println(currCount);
+			yield();
+		}
+		for (int i = 0; i < readNum; i++)
+			Lib.assertTrue((i + 1) == newBuffer.get(i));
+		System.out.println("Condition variable test finished.");
 	}
+
+	private static KThread t2 = null;
 
 	private static final char dbgThread = 't';
 
@@ -448,6 +587,8 @@ public class KThread {
 	private Runnable target;
 
 	private TCB tcb;
+
+	private KThread joinThread = null;
 
 	/**
 	 * Unique identifer for this thread. Used to deterministically compare
