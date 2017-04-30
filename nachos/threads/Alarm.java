@@ -2,6 +2,8 @@ package nachos.threads;
 
 import nachos.machine.*;
 
+import java.util.TreeSet;
+
 /**
  * Uses the hardware timer to provide preemption, and to allow threads to sleep
  * until a certain time.
@@ -20,6 +22,7 @@ public class Alarm {
 				timerInterrupt();
 			}
 		});
+		pending = new TreeSet<>();
 	}
 
 	/**
@@ -47,7 +50,39 @@ public class Alarm {
 	public void waitUntil(long x) {
 		// for now, cheat just to get something working (busy waiting is bad)
 		long wakeTime = Machine.timer().getTime() + x;
-		while (wakeTime > Machine.timer().getTime())
-			KThread.yield();
+//		while (wakeTime > Machine.timer().getTime())
+//			KThread.yield();
 	}
+
+	private class PendingThread implements Comparable {
+		PendingThread(long wakeTime, KThread thread) {
+			this.wakeTime = wakeTime;
+			this.thread = thread;
+			this.id = numPendingThreadsCreated++;
+		}
+
+		public int compareTo(Object o) {
+			PendingThread toOccur = (PendingThread) o;
+
+			// can't return 0 for unequal objects, so check all fields
+			if (wakeTime < toOccur.wakeTime)
+				return -1;
+			else if (wakeTime > toOccur.wakeTime)
+				return 1;
+			else if (id < toOccur.id)
+				return -1;
+			else if (id > toOccur.id)
+				return 1;
+			else
+				return 0;
+		}
+
+		private long wakeTime;
+		private KThread thread;
+		private long id;
+	}
+
+	private long numPendingThreadsCreated = 0;
+
+	private TreeSet<PendingThread> pending;
 }
