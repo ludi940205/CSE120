@@ -1,5 +1,6 @@
 package nachos.threads;
 
+import nachos.ag.AutoGrader;
 import nachos.machine.*;
 
 import javax.swing.*;
@@ -359,7 +360,7 @@ public class KThread {
 	 * from running to blocked or ready (depending on whether the thread is
 	 * sleeping or yielding).
 	 * 
-	 * @param finishing <tt>true</tt> if the current thread is finished, and
+	 * /@param finishing <tt>true</tt> if the current thread is finished, and
 	 * should be destroyed by the new thread.
 	 */
 	private void run() {
@@ -456,8 +457,8 @@ public class KThread {
 	 */
 
 	private static final int capacity = 10;
-	private static final int readNum = 1000000;
-	private static final int writeNum = 1000000;
+	private static final int readNum = 10000;
+	private static final int writeNum = 10000;
 	private static int currCount = 0;
 	private static int writerCount = 2, readerCount = 2;
 	private static int[] buffer = new int[capacity];
@@ -528,6 +529,13 @@ public class KThread {
 			new KThread(new Writer(writeNum)).setName("writer" + (i + 1)).fork();
 		for (int i = 0; i < readerCount; i++)
 			new KThread(new Reader(readNum)).setName("reader" + (i + 1)).fork();
+
+		while (readNotFinished > 0 || writeNotFinished > 0) {
+//			System.out.println(currCount);
+			yield();
+		}
+		for (int i = 0; i < readNum; i++)
+			Lib.assertTrue((i + 1) == newBuffer.get(i));
 	}
 
 	private static void joinTest() {
@@ -545,16 +553,9 @@ public class KThread {
 		System.out.println("Join test finished.");
 
 		readWriterTest();
-		while (readNotFinished > 0 || writeNotFinished > 0) {
-			System.out.println(currCount);
-			yield();
-		}
-		for (int i = 0; i < readNum; i++)
-			Lib.assertTrue((i + 1) == newBuffer.get(i));
+
 		System.out.println("Condition variable test finished.");
 	}
-
-	private static KThread t2 = null;
 
 	private static final char dbgThread = 't';
 

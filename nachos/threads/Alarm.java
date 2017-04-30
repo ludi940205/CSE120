@@ -35,7 +35,8 @@ public class Alarm {
 	public void timerInterrupt() {
 		long currTime = Machine.timer().getTime();
 		boolean intStatus = Machine.interrupt().disable();
-		while (pending.first().wakeTime <= currTime) {
+		while (!pending.isEmpty() &&
+				pending.first().wakeTime <= currTime) {
 			PendingThread next = pending.first();
 			pending.remove(next);
 
@@ -96,6 +97,43 @@ public class Alarm {
 		private long wakeTime;
 		private KThread thread;
 		private long id;
+	}
+
+	private final int numTestThreads = 3;
+	private int notFinished = numTestThreads;
+
+	private class AlarmTest implements Runnable {
+		AlarmTest(int which) {
+			this.which = which;
+		}
+
+		public void run() {
+			long interval = 2000000;
+			long prevTime = Machine.timer().getTime();
+			waitUntil(interval);
+			long finishTime = Machine.timer().getTime();
+			System.out.println(which + " :Set interval: " + interval + ", actual interval: "
+					+ (finishTime - prevTime) + ", start time: " + prevTime);
+			Lib.assertTrue((finishTime - prevTime) / interval - 1 < 0.1);
+			notFinished--;
+		}
+
+		private int which;
+	}
+
+	public void selfTest() {
+		for (int i = 0; i < numTestThreads; i++) {
+			new KThread(new AlarmTest(i)).setName("Alarm Test" + (i + 1)).fork();
+			for (int j = 0; j < 10000; j++) {
+				boolean intStatus = Machine.interrupt().disable();
+				Machine.interrupt().restore(intStatus);
+			}
+		}
+
+		while (notFinished > 0) {
+			boolean intStatus = Machine.interrupt().disable();
+			Machine.interrupt().restore(intStatus);
+		}
 	}
 
 	private long numPendingThreadsCreated = 0;
