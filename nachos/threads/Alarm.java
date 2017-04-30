@@ -2,6 +2,7 @@ package nachos.threads;
 
 import nachos.machine.*;
 
+import javax.crypto.Mac;
 import java.util.TreeSet;
 
 /**
@@ -32,6 +33,16 @@ public class Alarm {
 	 * should be run.
 	 */
 	public void timerInterrupt() {
+		long currTime = Machine.timer().getTime();
+		boolean intStatus = Machine.interrupt().disable();
+		while (pending.first().wakeTime <= currTime) {
+			PendingThread next = pending.first();
+			pending.remove(next);
+
+			Lib.assertTrue(next.wakeTime <= currTime);
+			next.thread.ready();
+		}
+		Machine.interrupt().restore(intStatus);
 		KThread.currentThread().yield();
 	}
 
@@ -52,6 +63,11 @@ public class Alarm {
 		long wakeTime = Machine.timer().getTime() + x;
 //		while (wakeTime > Machine.timer().getTime())
 //			KThread.yield();
+		boolean intStatus = Machine.interrupt().disable();
+		PendingThread thread = new PendingThread(wakeTime, KThread.currentThread());
+		pending.add(thread);
+		KThread.sleep();
+		Machine.interrupt().restore(intStatus);
 	}
 
 	private class PendingThread implements Comparable {
