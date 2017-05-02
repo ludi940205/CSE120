@@ -480,11 +480,7 @@ public class KThread {
 				System.out.println("t0 finished.");
 			}
 
-			private KThread t1;
-
-			private KThread t2;
-
-			private KThread t3;
+			private KThread t1, t2, t3;
 
 			private boolean[] finished = new boolean[3];
 		}
@@ -499,12 +495,12 @@ public class KThread {
 		Lib.debug(dbgThread, "Enter KThread.selfTest");
 
 		new JoinTests();
-		System.out.println("Join test finished.");
+		System.out.println("Join test finished.\n");
 
 //		readWriterTest();
-		ConditionTest.readWriterTest();
+		ReadWriter.readWriterTest();
 
-		System.out.println("Condition variable test finished.");
+		System.out.println("Condition variable test finished.\n");
 	}
 
 	private static final char dbgThread = 't';

@@ -99,41 +99,56 @@ public class Alarm {
 		private long id;
 	}
 
-	private final int numTestThreads = 3;
-	private int notFinished = numTestThreads;
-
-	private class AlarmTest implements Runnable {
-		AlarmTest(int which) {
-			this.which = which;
+	private class SelfTest {
+		SelfTest() {
+			case1();
+			System.out.println("Alarm test finished.\n");
 		}
 
-		public void run() {
-			long interval = 2000000;
-			long prevTime = Machine.timer().getTime();
-			waitUntil(interval);
-			long finishTime = Machine.timer().getTime();
-			System.out.println(which + " :Set interval: " + interval + ", actual interval: "
-					+ (finishTime - prevTime) + ", start time: " + prevTime);
-			Lib.assertTrue((finishTime - prevTime) / interval - 1 < 0.1);
-			notFinished--;
-		}
+		private void case1() {
+			numTestThreads = 3;
+			notFinished = numTestThreads;
+			long interval = 100000;
+			for (int i = 0; i < numTestThreads; i++) {
+				new KThread(new AlarmTest(i, interval)).setName("Alarm Test" + (i + 1)).fork();
+				for (int j = 0; j < 10000; j++) {
+					boolean intStatus = Machine.interrupt().disable();
+					Machine.interrupt().restore(intStatus);
+				}
+			}
 
-		private int which;
-	}
-
-	public void selfTest() {
-		for (int i = 0; i < numTestThreads; i++) {
-			new KThread(new AlarmTest(i)).setName("Alarm Test" + (i + 1)).fork();
-			for (int j = 0; j < 10000; j++) {
+			while (notFinished > 0) {
 				boolean intStatus = Machine.interrupt().disable();
 				Machine.interrupt().restore(intStatus);
 			}
 		}
 
-		while (notFinished > 0) {
-			boolean intStatus = Machine.interrupt().disable();
-			Machine.interrupt().restore(intStatus);
+		private class AlarmTest implements Runnable {
+			AlarmTest(int which, long interval) {
+				this.which = which;
+				this.interval = interval;
+			}
+
+			public void run() {
+				long prevTime = Machine.timer().getTime();
+				waitUntil(interval);
+				long finishTime = Machine.timer().getTime();
+				System.out.println(which + " :Set interval: " + interval + ", actual interval: "
+						+ (finishTime - prevTime) + ", start time: " + prevTime);
+				Lib.assertTrue((finishTime - prevTime) / interval - 1 < 0.1);
+				notFinished--;
+			}
+
+			private int which;
+			private long interval;
 		}
+
+		private int numTestThreads;
+		private int notFinished;
+	}
+
+	public void selfTest() {
+		new SelfTest();
 	}
 
 	private long numPendingThreadsCreated = 0;

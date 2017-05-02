@@ -17,7 +17,8 @@ public class Communicator {
 	 */
 	public Communicator() {
 		mutex = new Lock();
-		listener = new Condition(mutex);
+		activeListener = new Condition(mutex);
+		waitListener = new Condition(mutex);
 		activeSpeaker = new Condition(mutex);
 		waitSpeaker = new Condition(mutex);
 	}
@@ -40,8 +41,9 @@ public class Communicator {
 //		System.out.println("Inside speaker");
 		speaking = true;
 		message = word;
-		listener.wake();
-		activeSpeaker.sleep();
+		waitListener.wake();
+//		activeSpeaker.sleep();
+//		activeListener.wake();
 		mutex.release();
 	}
 
@@ -54,12 +56,13 @@ public class Communicator {
 	public int listen() {
 		mutex.acquire();
 		while (!speaking) {
-			listener.sleep();
+			waitListener.sleep();
 		}
 		int ret = message;
-		activeSpeaker.wake();
-		waitSpeaker.wake();
 		speaking = false;
+//		activeSpeaker.wake();
+		waitSpeaker.wake();
+//		activeListener.sleep();
 		mutex.release();
 		return ret;
 	}
@@ -68,6 +71,7 @@ public class Communicator {
 		SelfTest() {
 			case1();
 			case2();
+			case3();
 		}
 
 		private static void case1() {
@@ -86,7 +90,7 @@ public class Communicator {
 			}
 			while (notFinished > 0)
 				KThread.yield();
-			System.out.println("Case 1 finished.");
+			System.out.println("Case 1 finished.\n");
 		}
 
 		private static void case2() {
@@ -99,7 +103,17 @@ public class Communicator {
 			}
 			while (notFinished > 0)
 				KThread.yield();
-			System.out.println("Case 2 finished.");
+			System.out.println("Case 2 finished.\n");
+		}
+
+		private static void case3() {
+			notFinished = 2;
+			communicator = new Communicator();
+			new KThread(new Listener(0)).setName("listener " + 0).fork();
+			new KThread(new Speaker(0)).setName("speaker " + 0).fork();
+			while (notFinished > 0)
+				KThread.yield();
+			System.out.println("Case 3 finished.\n");
 		}
 
 		private static class Listener implements Runnable {
@@ -141,7 +155,7 @@ public class Communicator {
 
 	private Lock mutex;
 
-	private Condition listener, activeSpeaker, waitSpeaker;
+	private Condition activeListener, waitListener, activeSpeaker, waitSpeaker;
 
 	private boolean speaking = false;
 

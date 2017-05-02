@@ -5,8 +5,8 @@ import java.util.List;
 
 import nachos.machine.*;
 
-public final class ConditionTest {
-    ConditionTest() {
+public final class ReadWriter {
+    ReadWriter() {
     }
 
     private static class Reader implements Runnable {
@@ -74,8 +74,8 @@ public final class ConditionTest {
     }
 
     private static final int capacity = 10;
-    private static final int readNum = 10000;
-    private static final int writeNum = 10000;
+    private static final int readNum = 1000;
+    private static final int writeNum = 1000;
     private static int currCount = 0;
     private static int writerCount = 2, readerCount = 2;
     private static int[] buffer = new int[capacity];
