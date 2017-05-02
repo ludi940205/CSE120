@@ -427,57 +427,69 @@ public class KThread {
 		private int which;
 	}
 
-	private static class JoinTest implements Runnable {
-		JoinTest(int which) {
-			this.which = which;
-
-			t1 = new KThread(new Runnable() {
-				@Override
-				public void run() {
-					System.out.println("Inside kthread t1.");
-				}
-			}).setName("joined thread 1");
-
-			t2 = new KThread(new Runnable() {
-				@Override
-				public void run() {
-					System.out.println("Inside kthread t2.");
-				}
-			}).setName("joined thread 2");
-
-			t3 = new KThread(new Runnable() {
-				@Override
-				public void run() {
-					System.out.println("Inside kthread t3.");
-				}
-			}).setName("joined thread 3");
+	private static class JoinTests {
+		JoinTests() {
+			new KThread(new Case1()).setName("forked thread 1").fork();
+			while (!allFinished)
+				yield();
 		}
 
-		public void run() {
-			t1.fork();
-			t3.fork();
-			t2.fork();
+		private static class Case1 implements Runnable {
+			Case1() {
+				t1 = new KThread(new Runnable() {
+					@Override
+					public void run() {
+						System.out.println("Inside kthread t1.");
+						t2.join();
+						System.out.println("t1 finished.");
+						finished[0] = true;
+					}
+				}).setName("joined thread 1");
 
-			System.out.println("Inside kthread t0");
-			t1.join();
-			t3.join();
-			t2.join();
-			System.out.println("t0 finished.");
+				t2 = new KThread(new Runnable() {
+					@Override
+					public void run() {
+						System.out.println("Inside kthread t2.");
+						t3.join();
+						System.out.println("t2 finished.");
+						finished[1] = true;
+					}
+				}).setName("joined thread 2");
+
+				t3 = new KThread(new Runnable() {
+					@Override
+					public void run() {
+						System.out.println("Inside kthread t3.");
+//					t1.join();
+						System.out.println("t3 finished.");
+						finished[2] = true;
+					}
+				}).setName("joined thread 3");
+			}
+
+			public void run() {
+				t1.fork();
+				t2.fork();
+				t3.fork();
+
+				System.out.println("Inside kthread t0");
+				while (!(finished[0] && finished[1] && finished[2]))
+					yield();
+
+				allFinished = true;
+				System.out.println("t0 finished.");
+			}
+
+			private KThread t1;
+
+			private KThread t2;
+
+			private KThread t3;
+
+			private boolean[] finished = new boolean[3];
 		}
 
-		private int which;
-
-		private KThread t1;
-
-		private KThread t2;
-
-		private KThread t3;
-
-	}
-
-	private static void joinTest() {
-		new KThread(new JoinTest(1)).setName("forked thread 1").fork();
-		new PingTest(0).run();
+		private static boolean allFinished = false;
 	}
 
 	/**
@@ -486,7 +498,7 @@ public class KThread {
 	public static void selfTest() {
 		Lib.debug(dbgThread, "Enter KThread.selfTest");
 
-		joinTest();
+		new JoinTests();
 		System.out.println("Join test finished.");
 
 //		readWriterTest();

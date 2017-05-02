@@ -64,51 +64,79 @@ public class Communicator {
 		return ret;
 	}
 
-	private static Communicator communicator = new Communicator();
-	private static int num = 1;
-	private static int notFinished = 2 * num;
-
-	private static class Speaker implements Runnable {
-		Speaker(int which) {
-			this.which = which;
+	private static class SelfTest {
+		SelfTest() {
+			case1();
+			case2();
 		}
 
-		public void run() {
-			communicator.speak(which);
-			System.out.println("Speaker " + which + " speaks " + which);
-			notFinished--;
+		private static void case1() {
+			communicator = new Communicator();
+			num = 10;
+			notFinished = num * 2;
+			int num1 = num / 2;
+			for (int i = 0; i < num1; i++) {
+				new KThread(new Speaker(i)).setName("speaker " + i).fork();
+			}
+			for (int i = 0; i < num; i++) {
+				new KThread(new Listener(i)).setName("listener " + i).fork();
+			}
+			for (int i = 0; i < num - num1; i++) {
+				new KThread(new Speaker(num1 + i)).setName("speaker " + i).fork();
+			}
+			while (notFinished > 0)
+				KThread.yield();
+			System.out.println("Case 1 finished.");
 		}
 
-		private int which;
-	}
-
-	private static class Listener implements Runnable {
-		Listener(int which) {
-			this. which = which;
+		private static void case2() {
+			communicator = new Communicator();
+			num = 10;
+			notFinished = num * 2;
+			for (int i = 0; i < num; i++) {
+				new KThread(new Speaker(i)).setName("speaker " + i).fork();
+				new KThread(new Listener(i)).setName("listener " + i).fork();
+			}
+			while (notFinished > 0)
+				KThread.yield();
+			System.out.println("Case 2 finished.");
 		}
 
-		public void run() {
-			int receive = communicator.listen();
-			System.out.println("Listener " + which + " receive " + receive);
-			notFinished--;
+		private static class Listener implements Runnable {
+			Listener(int which) {
+				this. which = which;
+			}
+
+			public void run() {
+				int receive = communicator.listen();
+				System.out.println("Listener receives " + receive);
+				notFinished--;
+			}
+
+			private int which;
 		}
 
-		private int which;
+		private static class Speaker implements Runnable {
+			Speaker(int which) {
+				this.which = which;
+			}
+
+			public void run() {
+				communicator.speak(which);
+				System.out.println("Speaker speaks " + which);
+				notFinished--;
+			}
+
+			private int which;
+		}
+
+		private static Communicator communicator;
+		private static int num;
+		private static int notFinished;
 	}
 
 	public static void selfTest() {
-		int num1 = num / 2;
-		for (int i = 0; i < num1; i++) {
-			new KThread(new Speaker(i)).setName("speaker " + i).fork();
-		}
-		for (int i = 0; i < num; i++) {
-			new KThread(new Listener(i)).setName("listener " + i).fork();
-		}
-		for (int i = 0; i < num - num1; i++) {
-			new KThread(new Speaker(num1 + i)).setName("speaker " + i).fork();
-		}
-		while (notFinished > 0)
-			KThread.yield();
+		new SelfTest();
 	}
 
 	private Lock mutex;
