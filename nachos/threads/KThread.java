@@ -11,16 +11,16 @@ import java.util.Vector;
 /**
  * A KThread is a thread that can be used to execute Nachos kernel code. Nachos
  * allows multiple threads to run concurrently.
- * 
+ *
  * To create a new thread of execution, first declare a class that implements
  * the <tt>Runnable</tt> interface. That class then implements the <tt>run</tt>
  * method. An instance of the class can then be allocated, passed as an argument
  * when creating <tt>KThread</tt>, and forked. For example, a thread that
  * computes pi could be written as follows:
- * 
+ *
  * <p>
  * <blockquote>
- * 
+ *
  * <pre>
  * class PiRun implements Runnable {
  * 	public void run() {
@@ -29,25 +29,25 @@ import java.util.Vector;
  *     }
  * }
  * </pre>
- * 
+ *
  * </blockquote>
  * <p>
  * The following code would then create a thread and start it running:
- * 
+ *
  * <p>
  * <blockquote>
- * 
+ *
  * <pre>
  * PiRun p = new PiRun();
  * new KThread(p).fork();
  * </pre>
- * 
+ *
  * </blockquote>
  */
 public class KThread {
 	/**
 	 * Get the current thread.
-	 * 
+	 *
 	 * @return the current thread.
 	 */
 	public static KThread currentThread() {
@@ -78,7 +78,7 @@ public class KThread {
 
 	/**
 	 * Allocate a new KThread.
-	 * 
+	 *
 	 * @param target the object whose <tt>run</tt> method is called.
 	 */
 	public KThread(Runnable target) {
@@ -88,7 +88,7 @@ public class KThread {
 
 	/**
 	 * Set the target of this thread.
-	 * 
+	 *
 	 * @param target the object whose <tt>run</tt> method is called.
 	 * @return this thread.
 	 */
@@ -102,7 +102,7 @@ public class KThread {
 	/**
 	 * Set the name of this thread. This name is used for debugging purposes
 	 * only.
-	 * 
+	 *
 	 * @param name the name to give to this thread.
 	 * @return this thread.
 	 */
@@ -114,7 +114,7 @@ public class KThread {
 	/**
 	 * Get the name of this thread. This name is used for debugging purposes
 	 * only.
-	 * 
+	 *
 	 * @return the name given to this thread.
 	 */
 	public String getName() {
@@ -124,7 +124,7 @@ public class KThread {
 	/**
 	 * Get the full name of this thread. This includes its name along with its
 	 * numerical ID. This name is used for debugging purposes only.
-	 * 
+	 *
 	 * @return the full name given to this thread.
 	 */
 	public String toString() {
@@ -191,7 +191,7 @@ public class KThread {
 	 * Finish the current thread and schedule it to be destroyed when it is safe
 	 * to do so. This method is automatically called when a thread's
 	 * <tt>run</tt> method returns, but it may also be called directly.
-	 * 
+	 *
 	 * The current thread cannot be immediately destroyed because its stack and
 	 * other execution state are still in use. Instead, this thread will be
 	 * destroyed automatically by the next thread to run, when it is safe to
@@ -220,12 +220,12 @@ public class KThread {
 	 * Relinquish the CPU if any other thread is ready to run. If so, put the
 	 * current thread on the ready queue, so that it will eventually be
 	 * rescheuled.
-	 * 
+	 *
 	 * <p>
 	 * Returns immediately if no other thread is ready to run. Otherwise returns
 	 * when the current thread is chosen to run again by
 	 * <tt>readyQueue.nextThread()</tt>.
-	 * 
+	 *
 	 * <p>
 	 * Interrupts are disabled, so that the current thread can atomically add
 	 * itself to the ready queue and switch to the next thread. On return,
@@ -249,7 +249,7 @@ public class KThread {
 	/**
 	 * Relinquish the CPU, because the current thread has either finished or it
 	 * is blocked. This thread must be the current thread.
-	 * 
+	 *
 	 * <p>
 	 * If the current thread is blocked (on a synchronization primitive, i.e. a
 	 * <tt>Semaphore</tt>, <tt>Lock</tt>, or <tt>Condition</tt>), eventually
@@ -312,7 +312,7 @@ public class KThread {
 	 * and <tt>runNextThread()</tt> is called, it will run the idle thread. The
 	 * idle thread must never block, and it will only be allowed to run when all
 	 * other threads are blocked.
-	 * 
+	 *
 	 * <p>
 	 * Note that <tt>ready()</tt> never adds the idle thread to the ready set.
 	 */
@@ -349,17 +349,17 @@ public class KThread {
 	 * switch to the new thread by calling <tt>TCB.contextSwitch()</tt>, and
 	 * load the state of the new thread. The new thread becomes the current
 	 * thread.
-	 * 
+	 *
 	 * <p>
 	 * If the new thread and the old thread are the same, this method must still
 	 * call <tt>saveState()</tt>, <tt>contextSwitch()</tt>, and
 	 * <tt>restoreState()</tt>.
-	 * 
+	 *
 	 * <p>
 	 * The state of the previously running thread must already have been changed
 	 * from running to blocked or ready (depending on whether the thread is
 	 * sleeping or yielding).
-	 * 
+	 *
 	 * /@param finishing <tt>true</tt> if the current thread is finished, and
 	 * should be destroyed by the new thread.
 	 */
@@ -430,26 +430,49 @@ public class KThread {
 	private static class JoinTest implements Runnable {
 		JoinTest(int which) {
 			this.which = which;
+
+			t1 = new KThread(new Runnable() {
+				@Override
+				public void run() {
+					System.out.println("Inside kthread t1.");
+				}
+			}).setName("joined thread 1");
+
+			t2 = new KThread(new Runnable() {
+				@Override
+				public void run() {
+					System.out.println("Inside kthread t2.");
+				}
+			}).setName("joined thread 2");
+
+			t3 = new KThread(new Runnable() {
+				@Override
+				public void run() {
+					System.out.println("Inside kthread t3.");
+				}
+			}).setName("joined thread 3");
 		}
 
 		public void run() {
-			KThread t2 = new KThread(new Runnable() {
-				@Override
-				public void run() {
-					for (int i = 0; i < 6; i++)
-						System.out.println("*** awesome thread " + 2 + " looped " + i
-								+ " times");
-				}
-			}).setName("joined thread");
+			t1.fork();
+			t3.fork();
 			t2.fork();
-			for (int i = 0; i < 5; i++) {
-				System.out.println("*** awesome thread " + which + " looped " + i
-						+ " times");
-				if (i == 0) t2.join();
-			}
+
+			System.out.println("Inside kthread t0");
+			t1.join();
+			t3.join();
+			t2.join();
+			System.out.println("t0 finished.");
 		}
 
 		private int which;
+
+		private KThread t1;
+
+		private KThread t2;
+
+		private KThread t3;
+
 	}
 
 	private static void joinTest() {
@@ -476,7 +499,7 @@ public class KThread {
 
 	/**
 	 * Additional state used by schedulers.
-	 * 
+	 *
 	 * @see nachos.threads.PriorityScheduler.ThreadState
 	 */
 	public Object schedulingState = null;
