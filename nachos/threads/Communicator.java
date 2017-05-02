@@ -21,6 +21,7 @@ public class Communicator {
 		waitListener = new Condition(mutex);
 		activeSpeaker = new Condition(mutex);
 		waitSpeaker = new Condition(mutex);
+		nAS = nAL = nWS = nWL = 0;
 	}
 
 	/**
@@ -35,15 +36,24 @@ public class Communicator {
 	 */
 	public void speak(int word) {
 		mutex.acquire();
-		while (speaking) {
+		while (nAS > 0) {
+			nWS++;
 			waitSpeaker.sleep();
+			nWS--;
 		}
-//		System.out.println("Inside speaker");
-		speaking = true;
+		nAS++;
 		message = word;
-		waitListener.wake();
-//		activeSpeaker.sleep();
-//		activeListener.wake();
+		if (nAL > 0)
+			activeListener.wake();
+		else {
+			if (nWL > 0)
+				waitListener.wake();
+			activeSpeaker.sleep();
+			nAS--;
+			nAL--;
+			if (nWS > 0)
+				waitSpeaker.wake();
+		}
 		mutex.release();
 	}
 
@@ -55,14 +65,27 @@ public class Communicator {
 	 */
 	public int listen() {
 		mutex.acquire();
-		while (!speaking) {
+		while (nAL > 0) {
+			nWL++;
 			waitListener.sleep();
+			nWL--;
 		}
-		int ret = message;
-		speaking = false;
-//		activeSpeaker.wake();
-		waitSpeaker.wake();
-//		activeListener.sleep();
+		nAL++;
+		int ret;
+		if (nAS > 0) {
+			activeSpeaker.wake();
+			ret = message;
+		}
+		else {
+			if (nWS > 0)
+				waitSpeaker.wake();
+			activeListener.sleep();
+			nAL--;
+			nAS--;
+			if (nWL > 0)
+				waitListener.wake();
+			ret = message;
+		}
 		mutex.release();
 		return ret;
 	}
@@ -157,9 +180,7 @@ public class Communicator {
 
 	private Condition activeListener, waitListener, activeSpeaker, waitSpeaker;
 
-	private boolean speaking = false;
-
-//	private int speakers = 0, listeners = 0, messages = 0;
+	private int nWL, nWS, nAL, nAS;
 
 	private int message;
 }
