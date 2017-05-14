@@ -2,7 +2,6 @@ package nachos.threads;
 
 import nachos.machine.*;
 
-import javax.crypto.Mac;
 import java.util.TreeSet;
 
 /**

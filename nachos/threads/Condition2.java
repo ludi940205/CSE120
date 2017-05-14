@@ -1,7 +1,6 @@
 package nachos.threads;
 
 import nachos.machine.*;
-import org.omg.PortableServer.THREAD_POLICY_ID;
 
 /**
  * An implementation of condition variables that disables interrupt()s for
