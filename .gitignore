@@ -13,8 +13,8 @@ hs_err_pid*
 <<<<<<< HEAD
 
 # iml and xml files
-=======
->>>>>>> d6afd3a2459441976dbc3fc65d6519a818dc875a
+#=======
+#>>>>>>> d6afd3a2459441976dbc3fc65d6519a818dc875a
 .idea/
 CSE120.iml
 out/
