@@ -343,6 +343,26 @@ public class UserProcess {
 		return 0;
 	}
 
+	private int handleCreate() {
+		return 0;
+	}
+
+	private int handleOpen() {
+		return 0;
+	}
+
+	private int handleRead() {
+		return 0;
+	}
+
+	private int handleWrite() {
+		return 0;
+	}
+
+	private int handleClose() {
+		return 0;
+	}
+
 	private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2,
 			syscallJoin = 3, syscallCreate = 4, syscallOpen = 5,
 			syscallRead = 6, syscallWrite = 7, syscallClose = 8,
@@ -411,8 +431,18 @@ public class UserProcess {
 	 */
 	public int handleSyscall(int syscall, int a0, int a1, int a2, int a3) {
 		switch (syscall) {
-		case syscallHalt:
-			return handleHalt();
+			case syscallHalt:
+				return handleHalt();
+			case syscallCreate:
+				return handleCreate();
+			case syscallOpen:
+				return handleOpen();
+			case syscallRead:
+				return handleRead();
+			case syscallWrite:
+				return handleWrite();
+			case syscallClose:
+				return handleClose();
 
 		default:
 			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
