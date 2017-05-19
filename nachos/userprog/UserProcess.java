@@ -368,7 +368,7 @@ public class UserProcess {
 			return -1;
 		OpenFile file = fd.getFile();
 
-		final int bufferSize = 1024;
+		final int bufferSize = pageSize;
 		byte[] dummyBuffer = new byte[bufferSize];
 
 		int pos = 0;
@@ -386,7 +386,7 @@ public class UserProcess {
 			return -1;
 		OpenFile file = fd.getFile();
 
-		final int bufferSize = 1024;
+		final int bufferSize = pageSize;
 		byte[] dummyBuffer = new byte[bufferSize];
 
 		int pos = 0;
@@ -620,6 +620,7 @@ public class UserProcess {
 		public boolean delete(String fileName) {
 			for (int i = 2; i < maxFileCount; i++) {
 				if (table[i].getName().equals(fileName)) {
+					table[i].getFile().close();
 					table[i].clean();
 					count--;
 					return true;
@@ -629,7 +630,7 @@ public class UserProcess {
 		}
 
 		private final int maxFileCount = 16;
-		private FileDescriptor[] table;
+		private FileDescriptor[] table = new FileDescriptor[maxFileCount];
 		private int count = 2;
 	}
 
