@@ -546,7 +546,10 @@ public class UserProcess {
 		public void clean() {
 			valid = false;
 			fileName = "";
-			file = null;
+			if (file != null) {
+				file.close();
+				file = null;
+			}
 			position = -1;
 		}
 
@@ -620,7 +623,6 @@ public class UserProcess {
 		public boolean delete(String fileName) {
 			for (int i = 2; i < maxFileCount; i++) {
 				if (table[i].getName().equals(fileName)) {
-					table[i].getFile().close();
 					table[i].clean();
 					count--;
 					return true;
