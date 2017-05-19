@@ -5,6 +5,7 @@ import nachos.threads.*;
 import nachos.userprog.*;
 
 import java.io.EOFException;
+import java.io.File;
 
 /**
  * Encapsulates the state of a user process that is not contained in its user
@@ -348,25 +349,62 @@ public class UserProcess {
 	private int handleCreate(int a0) {
 		String fileName = readVirtualMemoryString(a0, maxStrLen);
 		FileDescriptor fd = fdTable.create(fileName);
-		if (fd.isValid())
+		if (fd != null && fd.isValid())
 			return fd.getPosition();
 		return -1;
 	}
 
-	private int handleOpen() {
+	private int handleOpen(int a0) {
+		String fileName = readVirtualMemoryString(a0, maxStrLen);
+		FileDescriptor fd = fdTable.open(fileName);
+		if (fd != null && fd.isValid())
+			return fd.getPosition();
+		return -1;
+	}
+
+	private int handleRead(int fileDescriptor, int bufferVAddr, int count) {
+		FileDescriptor fd = fdTable.get(fileDescriptor);
+		if (fd == null || !fd.isValid())
+			return -1;
+		OpenFile file = fd.getFile();
+
+		final int bufferSize = 1024;
+		byte[] dummyBuffer = new byte[bufferSize];
+
+		int pos = 0;
+		while (pos < count && pos < file.length()) {
+			if (file.read(pos, dummyBuffer, 0, bufferSize) == -1)
+				return -1;
+			pos += writeVirtualMemory(bufferVAddr + pos, dummyBuffer, 0, count - pos);
+		}
 		return 0;
 	}
 
-	private int handleRead() {
+	private int handleWrite(int fileDescriptor, int bufferVAddr, int count) {
+		FileDescriptor fd = fdTable.get(fileDescriptor);
+		if (fd == null || !fd.isValid())
+			return -1;
+		OpenFile file = fd.getFile();
+
+		final int bufferSize = 1024;
+		byte[] dummyBuffer = new byte[bufferSize];
+
+		int pos = 0;
+		while(pos < count) {
+			int amount = readVirtualMemory(bufferVAddr, dummyBuffer, pos, Math.min(bufferSize, count - pos));
+			pos += amount;
+			if (file.write(pos, dummyBuffer, 0, amount) == -1)
+				return -1;
+		}
+
 		return 0;
 	}
 
-	private int handleWrite() {
-		return 0;
-	}
-
-	private int handleClose() {
-		return 0;
+	private int handleClose(int a0) {
+		String fileName = readVirtualMemoryString(a0, maxStrLen);
+		if (fdTable.delete(fileName))
+			return 0;
+		return -1;
 	}
 
 	private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2,
@@ -442,13 +480,13 @@ public class UserProcess {
 			case syscallCreate:
 				return handleCreate(a0);
 			case syscallOpen:
-				return handleOpen();
+				return handleOpen(a0);
 			case syscallRead:
-				return handleRead();
+				return handleRead(a0, a1, a2);
 			case syscallWrite:
-				return handleWrite();
+				return handleWrite(a0, a1, a2);
 			case syscallClose:
-				return handleClose();
+				return handleClose(a0);
 
 		default:
 			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -537,8 +575,8 @@ public class UserProcess {
 
 	private class FileDescriptorTable {
 		public FileDescriptorTable() {
-			table[0] = new FileDescriptor("stdin", 0, false);
-			table[1] = new FileDescriptor("stdout", 1, false);
+			table[STDIN] = new FileDescriptor("stdin", STDIN, false);
+			table[STDOUT] = new FileDescriptor("stdout", STDOUT, false);
 			for (int i = 2; i < maxFileCount; i++)
 				table[i] = new FileDescriptor();
 		}
@@ -560,9 +598,28 @@ public class UserProcess {
 			return null;
 		}
 
-		public boolean deleteByName(String fileName) {
+		public FileDescriptor open(String fileName) {
+			if (isFull())
+				return null;
 			for (int i = 2; i < maxFileCount; i++) {
-				if (table[i].getName() == fileName) {
+				if (!table[i].isValid()) {
+					table[i] = new FileDescriptor(fileName, i, false);
+					count++;
+					return table[i];
+				}
+			}
+			return null;
+		}
+
+		public FileDescriptor get(int pos) {
+			if (pos <= 1 || pos >= maxFileCount)
+				return null;
+			return table[pos];
+		}
+
+		public boolean delete(String fileName) {
+			for (int i = 2; i < maxFileCount; i++) {
+				if (table[i].getName().equals(fileName)) {
 					table[i].clean();
 					count--;
 					return true;
