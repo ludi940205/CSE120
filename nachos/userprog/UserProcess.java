@@ -27,6 +27,8 @@ public class UserProcess {
 		pageTable = new TranslationEntry[numPhysPages];
 		for (int i = 0; i < numPhysPages; i++)
 			pageTable[i] = new TranslationEntry(i, i, true, false, false, false);
+
+		fdTable = new FileDescriptorTable();
 	}
 
 	/**
@@ -343,8 +345,12 @@ public class UserProcess {
 		return 0;
 	}
 
-	private int handleCreate() {
-		return 0;
+	private int handleCreate(int a0) {
+		String fileName = readVirtualMemoryString(a0, maxStrLen);
+		FileDescriptor fd = fdTable.create(fileName);
+		if (fd.isValid())
+			return fd.getPosition();
+		return -1;
 	}
 
 	private int handleOpen() {
@@ -434,7 +440,7 @@ public class UserProcess {
 			case syscallHalt:
 				return handleHalt();
 			case syscallCreate:
-				return handleCreate();
+				return handleCreate(a0);
 			case syscallOpen:
 				return handleOpen();
 			case syscallRead:
@@ -479,6 +485,97 @@ public class UserProcess {
 		}
 	}
 
+
+	public class FileDescriptor {
+		public FileDescriptor() {
+			clean();
+		}
+
+		public FileDescriptor(String name, int pos, boolean create) {
+			fileName = name;
+			position = pos;
+
+			if (pos == 0)
+				file = UserKernel.console.openForReading();
+			else if (pos == 1)
+				file = UserKernel.console.openForWriting();
+			else
+				file = UserKernel.fileSystem.open(fileName, create);
+
+			valid = true;
+		}
+
+		public void clean() {
+			valid = false;
+			fileName = "";
+			file = null;
+			position = -1;
+		}
+
+		public boolean isValid() {
+			return valid;
+		}
+
+		public OpenFile getFile() {
+			return file;
+		}
+
+		public int getPosition() {
+			return position;
+		}
+
+		public String getName() {
+			return fileName;
+		}
+
+		private String fileName;
+		private OpenFile file;
+		private int position;
+		private boolean valid;
+	}
+
+
+	private class FileDescriptorTable {
+		public FileDescriptorTable() {
+			table[0] = new FileDescriptor("stdin", 0, false);
+			table[1] = new FileDescriptor("stdout", 1, false);
+			for (int i = 2; i < maxFileCount; i++)
+				table[i] = new FileDescriptor();
+		}
+
+		public boolean isFull() {
+			return count == maxFileCount;
+		}
+
+		public FileDescriptor create(String fileName) {
+			if (isFull())
+				return null;
+			for (int i = 2; i < maxFileCount; i++) {
+				if (!table[i].isValid()) {
+					table[i] = new FileDescriptor(fileName, i, true);
+					count++;
+					return table[i];
+				}
+			}
+			return null;
+		}
+
+		public boolean deleteByName(String fileName) {
+			for (int i = 2; i < maxFileCount; i++) {
+				if (table[i].getName() == fileName) {
+					table[i].clean();
+					count--;
+					return true;
+				}
+			}
+			return false;
+		}
+
+		private final int maxFileCount = 16;
+		private FileDescriptor[] table;
+		private int count = 2;
+	}
+
 	/** The program being run by this process. */
 	protected Coff coff;
 
@@ -495,7 +592,15 @@ public class UserProcess {
 
 	private int argc, argv;
 
+	private FileDescriptorTable fdTable;
+
 	private static final int pageSize = Processor.pageSize;
 
 	private static final char dbgProcess = 'a';
+
+	private static final int maxStrLen = 256;
+
+	private static final int STDIN = 0;
+
+	private static final int STDOUT = 1;
 }
