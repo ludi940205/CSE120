@@ -17,7 +17,7 @@ int main(int argc, char** argv)
 
   fd = open("cat.c");
   if (fd==-1) {
-    printf("Unable to open %s\n", cat.c);
+    printf("Unable to open %s\n", "cat.c");
     return 1;
   }
 
