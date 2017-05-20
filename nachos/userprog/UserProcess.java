@@ -588,7 +588,6 @@ public class UserProcess {
 		private boolean valid;
 	}
 
-
 	private class FileDescriptorTable {
 		public FileDescriptorTable() {
 			table[STDIN] = new FileDescriptor("stdin", STDIN, false);
