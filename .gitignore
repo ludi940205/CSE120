@@ -18,3 +18,4 @@ hs_err_pid*
 .idea/
 CSE120.iml
 out/
+*.txt

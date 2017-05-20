@@ -392,19 +392,29 @@ public class UserProcess {
 		int pos = 0;
 		while(pos < count) {
 			int amount = readVirtualMemory(bufferVAddr, dummyBuffer, pos, Math.min(bufferSize, count - pos));
+			if (fd.getPosition() > STDOUT) {
+				if (file.write(pos, dummyBuffer, 0, amount) == -1)
+					return -1;
+			}
+			else {
+				if (file.write(dummyBuffer, 0, amount) == -1)
+					return -1;
+			}
 			pos += amount;
-			if (file.write(pos, dummyBuffer, 0, amount) == -1)
-				return -1;
 		}
 
 		return 0;
 	}
 
-	private int handleClose(int a0) {
-		String fileName = readVirtualMemoryString(a0, maxStrLen);
-		if (fdTable.delete(fileName))
+	private int handleClose(int fd) {
+		if (fdTable.delete(fd))
 			return 0;
 		return -1;
+	}
+
+	private void handleExit(int status) {
+		handleHalt();
+		return;
 	}
 
 	private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2,
@@ -487,6 +497,9 @@ public class UserProcess {
 				return handleWrite(a0, a1, a2);
 			case syscallClose:
 				return handleClose(a0);
+			case syscallExit:
+				handleExit(a0);
+				return 0;
 
 		default:
 			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -615,7 +628,7 @@ public class UserProcess {
 		}
 
 		public FileDescriptor get(int pos) {
-			if (pos <= 1 || pos >= maxFileCount)
+			if (pos < 0 || pos >= maxFileCount)
 				return null;
 			return table[pos];
 		}
@@ -629,6 +642,14 @@ public class UserProcess {
 				}
 			}
 			return false;
+		}
+
+		public boolean delete(int pos) {
+			if (pos < 0 || pos >= maxFileCount)
+				return false;
+			table[pos].clean();
+			count--;
+			return true;
 		}
 
 		private final int maxFileCount = 16;
