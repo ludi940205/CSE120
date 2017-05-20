@@ -6,7 +6,7 @@ int main() {
 	printf("Hello world!\n");
 	
 	int newFile, oldFile;
-	char* buffer;
+	char buffer[16];
 	
 	printf("Creating file\n");
 	newFile = creat("TestFile.txt");
@@ -21,7 +21,7 @@ int main() {
 	oldFile = open("TestFile.txt");
 
 	printf("Reading file\n");
-	read(oldFile, buffer, 15);
+	read(oldFile, buffer, 16);
 	
 	printf(buffer);
 	
