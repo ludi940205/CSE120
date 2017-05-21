@@ -61,6 +61,21 @@ int main() {
     printf("closing file %d, %d\n", 6, files[5]);
     flag = close(files[6]);
     printf("closing file %d, %d\n", 7, files[6]);
+
+    files[14] = creat("f15.txt");
+    printf("creating file %d, %d\n", 15, files[14]);
+    files[15] = creat("f16.txt");
+    printf("creating file %d, %d\n", 16, files[15]);
+    files[16] = creat("f17.txt");
+    printf("creating file %d, %d\n", 17, files[16]);
+    files[17] = creat("f18.txt");
+    printf("creating file %d, %d\n", 18, files[17]);
+    files[18] = creat("f19.txt");
+    printf("creating file %d, %d\n", 19, files[18]);
+    files[19] = creat("f20.txt");
+    printf("creating file %d, %d\n", 20, files[19]);
+
+
     flag = close(files[7]);
     printf("closing file %d, %d\n", 8, files[7]);
     flag = close(files[8]);
