@@ -4,15 +4,13 @@
 
 int main(int argc, char* argv[]) {
     int i;
-    char name[10]
 
     if (argc != 1)
         exit(1);
-    name = argv[0];
 
-    printf("Inside thread %s\n", name);
+    printf("Inside thread %s\n", argv[0]);
     for (i = 0; i < 10000; i++);
-    printf("Finished thread %s\n", name);
+    printf("Finished thread %s\n", argv[0]);
 
     return 0;
 }
