@@ -5,10 +5,9 @@
 int main() {
     char buffer[5000];
     int file, newfile;
-    int length;
+    int length, i, flag;
     int files[20];
-    char* name = "testFiles/f00.txt"
-    int i, flag;
+    char* name = "testFiles/f00.txt";
 
     memset(buffer, 48, 5000);
     file = creat("testFile.txt");
