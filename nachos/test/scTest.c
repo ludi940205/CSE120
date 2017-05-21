@@ -5,9 +5,7 @@
 int main() {
     int childPID, i;
     int* status;
-    char names[1][10];
-
-    name[0] = "T1";
+    char name[1][10] = {"T0"};
 
     printf("Inside main\n");
 
