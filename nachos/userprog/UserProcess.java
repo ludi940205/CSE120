@@ -829,7 +829,7 @@ public class UserProcess {
 
 	private Condition joinCondition = new Condition(joinLock);
 
-	private static int currPID = 0;
+	private static int currPID = 1;
 
 	private static final int pageSize = Processor.pageSize;
 

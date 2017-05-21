@@ -2,11 +2,17 @@
 #include "stdlib.h"
 #include "syscall.h"
 
-int main() {
+int main(int argc, char* argv[]) {
     int i;
-    printf("Inside thread 1\n");
+    char name[10]
+
+    if (argc != 1)
+        exit(1);
+    name = argv[0];
+
+    printf("Inside thread %s\n", name);
     for (i = 0; i < 10000; i++);
-    printf("Finished thread 1\n");
+    printf("Finished thread %s\n", name);
 
     return 0;
 }
