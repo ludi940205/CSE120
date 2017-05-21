@@ -24,10 +24,10 @@ int main() {
     printf("finished first part\n");
 
     for (i = 0; i < 20; i++) {
-        name[12] = '0' + (i + 1) % 10;
-        name[11] = i < 9 ? '0' : '1';
+        name[2] = '0' + ((i + 1) % 10);
+        name[1] = i < 9 ? '0' : '1';
         files[i] = creat(name);
-        printf("creating file $s, %d\n", name, files[i]);
+        printf("creating file %s, %d\n", name, files[i]);
     }
 
     for (i = 0; i < 6; i++) {
@@ -36,8 +36,8 @@ int main() {
     }
 
     for (i = 14; i < 20; i++) {
-        name[12] = '0' + (i + 1) % 10;
-        name[11] = i < 9 ? '0' : '1';
+        name[2] = '0' + (i + 1) % 10;
+        name[1] = i < 9 ? '0' : '1';
         files[i] = creat(name);
         printf("creating file %s, %d\n", name, files[i]);
     }
