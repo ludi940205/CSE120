@@ -7,7 +7,7 @@ int main() {
     int file, newfile;
     int length, i, flag;
     int files[20];
-    char* name = "testFiles/f00.txt";
+    char name[18] = "testFiles/f00.txt";
 
 //    memset(buffer, 48, 5000);
 //    file = creat("testFile.txt");
@@ -32,7 +32,7 @@ int main() {
 
     for (i = 0; i < 20; i++) {
         flag = close(files[i]);
-        printf("closingf file %d, %d\n", i + 1, flag);
+        printf("closing file %d, %d\n", i + 1, flag);
     }
 
     return 0;
