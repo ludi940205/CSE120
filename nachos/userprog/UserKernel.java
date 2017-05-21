@@ -54,8 +54,6 @@ public class UserKernel extends ThreadedKernel {
 //			console.writeByte(c);
 //		} while (c != 'q');
 
-
-
 		System.out.println("");
 	}
 
