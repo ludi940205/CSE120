@@ -9,17 +9,19 @@ int main() {
     int files[20];
     char* name = "testFiles/f00.txt";
 
-    memset(buffer, 48, 5000);
-    file = creat("testFile.txt");
-    write(file, buffer, 5000);
-    close(file);
-
-    file = open("syscall.h");
-    newfile = creat("syscall_copy.h");
-    length = read(file, buffer, 5000);
-    write(newfile, buffer, 5000);
-    close(file);
-    close(newfile);
+//    memset(buffer, 48, 5000);
+//    file = creat("testFile.txt");
+//    write(file, buffer, 5000);
+//    close(file);
+//
+//    file = open("syscall.h");
+//    newfile = creat("syscall_copy.h");
+//    length = read(file, buffer, 5000);
+//    write(newfile, buffer, 5000);
+//    close(file);
+//    close(newfile);
+//
+//    printf("finished first part\n");
 
     for (i = 0; i < 20; i++) {
         name[12] = '0' + (i + 1) % 10;
