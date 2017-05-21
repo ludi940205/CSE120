@@ -578,17 +578,20 @@ public class UserProcess {
 		}
 
 		public FileDescriptor(String name, int pos, boolean create) {
-			fileName = name;
-			position = pos;
-
 			if (pos == 0)
 				file = UserKernel.console.openForReading();
 			else if (pos == 1)
 				file = UserKernel.console.openForWriting();
 			else
-				file = UserKernel.fileSystem.open(fileName, create);
+				file = UserKernel.fileSystem.open(name, create);
 
-			valid = true;
+			if (file == null)
+				clean();
+			else {
+				fileName = name;
+				position = pos;
+				valid = true;
+			}
 		}
 
 		public void clean() {
@@ -640,9 +643,14 @@ public class UserProcess {
 				return null;
 			for (int i = 2; i < maxFileCount; i++) {
 				if (!table[i].isValid()) {
-					table[i] = new FileDescriptor(fileName, i, true);
-					count++;
-					return table[i];
+					FileDescriptor fd = new FileDescriptor(fileName, i, true);
+					if (fd.isValid()) {
+						table[i] = fd;
+						count++;
+						return table[i];
+					}
+					else
+						return null;
 				}
 			}
 			return null;
@@ -653,9 +661,14 @@ public class UserProcess {
 				return null;
 			for (int i = 2; i < maxFileCount; i++) {
 				if (!table[i].isValid()) {
-					table[i] = new FileDescriptor(fileName, i, false);
-					count++;
-					return table[i];
+					FileDescriptor fd = new FileDescriptor(fileName, i, false);
+					if (fd.isValid()) {
+						table[i] = fd;
+						count++;
+						return table[i];
+					}
+					else
+						return null;
 				}
 			}
 			return null;

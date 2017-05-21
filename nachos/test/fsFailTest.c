@@ -3,7 +3,7 @@
 #include "syscall.h"
 
 int main() {
-    char buffer[10000];
+    char buffer[5000];
     int file, newfile;
     int length;
     int i;
@@ -18,7 +18,7 @@ int main() {
 
     i = write(file, buffer, 100);
     if (i == -1)
-        printf("read failed\n");
+        printf("write failed\n");
 
     close(file);
     printf("end\n");
