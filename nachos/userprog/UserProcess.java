@@ -5,7 +5,7 @@ import nachos.threads.*;
 import nachos.userprog.*;
 
 import java.io.EOFException;
-import java.io.File;
+import java.util.*;
 
 /**
  * Encapsulates the state of a user process that is not contained in its user
@@ -27,6 +27,7 @@ public class UserProcess {
 		int numPhysPages = Machine.processor().getNumPhysPages();
 
 		fdTable = new FileDescriptorTable();
+		UserKernel.processTable.addNewProcess(pID, this);
 	}
 
 	/**
@@ -325,7 +326,7 @@ public class UserProcess {
 		}
 
 		// allocate pages for stacks and arguments
-		for (int i = numPages - 9; i < numPages; i++) {
+		for (int i = numPages - 1 - stackPages; i < numPages; i++) {
 			int ppn = UserKernel.pageTable.getFreePage();
 			if (ppn == -1)
 				return false;
@@ -381,8 +382,77 @@ public class UserProcess {
 		return 0;
 	}
 
+	private void handleExit(int status) {
+		fdTable.clean();
+		unloadSections();
+		coff.close();
+		for (int childPID : childrenExitStatus.keySet()) {
+			UserKernel.processTable.getProcess(childPID).parentPID = -1;
+		}
+
+		UserProcess parentProcess = UserKernel.processTable.getProcess(parentPID);
+		if (parentProcess != null) {
+			parentProcess.childrenExitStatus.put(pID, status);
+			parentProcess.joinCondition.wake();
+		}
+
+		if (UserKernel.processTable.getProcessNum() == 1) {
+			Kernel.kernel.terminate();
+		}
+		KThread.finish();
+	}
+
+	private int handleExec(int pFile, int argc, int ppArgv) {
+		String fileName = readVirtualMemoryString(pFile, maxStrLen);
+		if (fileName == null || fileName.length() < 5
+				|| !fileName.substring(fileName.length() - 5).equals(".coff"))
+			return -1;
+
+		String[] args = new String[argc];
+		for (int i = 0; i < argc; i++) {
+			byte[] buffer = new byte[4];
+			if (readVirtualMemory(ppArgv, buffer) != 4)
+				return -1;
+			int pArgv = Lib.bytesToInt(buffer, 0);
+			args[i] = readVirtualMemoryString(pArgv, maxStrLen);
+			if (args[i] == null)
+				return -1;
+		}
+
+		UserProcess childProcess = newUserProcess();
+		if (!childProcess.execute(fileName, args)) {
+			Lib.debug(dbgProcess, "Not enough memory");
+			return -1;
+		}
+
+		childrenExitStatus.put(childProcess.pID, null);
+		childProcess.parentPID = this.pID;
+
+		return childProcess.pID;
+	}
+
+	private int handleJoin(int childPID, int pStatus) {
+		UserProcess childProcess = UserKernel.processTable.getProcess(childPID);
+		if (childProcess == null)
+			return -1;
+
+		Integer exitStatus = childrenExitStatus.get(childPID);
+		if (exitStatus == null) {
+			joinCondition.sleep();
+			exitStatus = childrenExitStatus.get(childPID);
+		}
+
+		byte[] buffer = Lib.bytesFromInt(exitStatus);
+		if (writeVirtualMemory(pStatus, buffer) != 4)
+			return -1;
+
+		return exitStatus == 0 ? 1 : 0;
+	}
+
 	private int handleCreate(int a0) {
 		String fileName = readVirtualMemoryString(a0, maxStrLen);
+		if (fileName == null)
+			return -1;
 		FileDescriptor fd = fdTable.create(fileName);
 		if (fd != null && fd.isValid())
 			return fd.getPosition();
@@ -408,8 +478,14 @@ public class UserProcess {
 
 		int pos = 0;
 		while (pos < count && pos < file.length()) {
-			if (file.read(pos, dummyBuffer, 0, bufferSize) == -1)
-				return -1;
+			if (fd.getPosition() == STDIN) {
+				if (file.read(dummyBuffer, 0, bufferSize) == -1)
+					return -1;
+			}
+			else {
+				if (file.read(pos, dummyBuffer, 0, bufferSize) == -1)
+					return -1;
+			}
 			pos += writeVirtualMemory(bufferVAddr + pos, dummyBuffer, 0, Math.min(bufferSize, count - pos));
 		}
 		return 0;
@@ -447,9 +523,11 @@ public class UserProcess {
 		return -1;
 	}
 
-	private void handleExit(int status) {
-		handleHalt();
-		return;
+	private int handleUnlink(int vAddr) {
+		String fileName = readVirtualMemoryString(vAddr, maxStrLen);
+		if (fdTable.delete(fileName))
+			return 0;
+		return -1;
 	}
 
 	private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2,
@@ -522,6 +600,13 @@ public class UserProcess {
 		switch (syscall) {
 			case syscallHalt:
 				return handleHalt();
+			case syscallExit:
+				handleExit(a0);
+				return 0;
+			case syscallExec:
+				return handleExec(a0, a1, a2);
+			case syscallJoin:
+				return handleJoin(a0, a1);
 			case syscallCreate:
 				return handleCreate(a0);
 			case syscallOpen:
@@ -532,9 +617,9 @@ public class UserProcess {
 				return handleWrite(a0, a1, a2);
 			case syscallClose:
 				return handleClose(a0);
-			case syscallExit:
-				handleExit(a0);
-				return 0;
+			case syscallUnlink:
+				return handleUnlink(a0);
+
 
 		default:
 			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -699,6 +784,14 @@ public class UserProcess {
 			return true;
 		}
 
+		public void clean() {
+			for (int i = 0; i < table.length; i++) {
+				table[i].clean();
+				table[i] = null;
+			}
+			count = 0;
+		}
+
 		private final int maxFileCount = 16;
 		private FileDescriptor[] table = new FileDescriptor[maxFileCount];
 		private int count = 2;
@@ -721,6 +814,18 @@ public class UserProcess {
 	private int argc, argv;
 
 	private FileDescriptorTable fdTable;
+
+	private int pID = currPID++;
+
+	private int parentPID = -1;
+
+	private Map<Integer, Integer> childrenExitStatus = new HashMap<>();
+
+	private Lock joinLock = new Lock();
+
+	private Condition joinCondition = new Condition(joinLock);
+
+	private static int currPID = 0;
 
 	private static final int pageSize = Processor.pageSize;
 

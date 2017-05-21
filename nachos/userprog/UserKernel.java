@@ -5,6 +5,7 @@ import nachos.threads.*;
 import nachos.userprog.*;
 
 import javax.crypto.Mac;
+import java.util.HashMap;
 import java.util.LinkedList;
 
 /**
@@ -34,6 +35,7 @@ public class UserKernel extends ThreadedKernel {
 		});
 
 		pageTable = new PageTable();
+		processTable = new ProcessTable();
 	}
 
 	/**
@@ -42,15 +44,17 @@ public class UserKernel extends ThreadedKernel {
 	public void selfTest() {
 		super.selfTest();
 
-		System.out.println("Testing the console device. Typed characters");
-		System.out.println("will be echoed until q is typed.");
-
-		char c;
-
+//		System.out.println("Testing the console device. Typed characters");
+//		System.out.println("will be echoed until q is typed.");
+//
+//		char c;
+//
 //		do {
 //			c = (char) console.readByte(true);
 //			console.writeByte(c);
 //		} while (c != 'q');
+
+
 
 		System.out.println("");
 	}
@@ -113,38 +117,67 @@ public class UserKernel extends ThreadedKernel {
 		super.terminate();
 	}
 
-	public class PageTable {
+	public class PageTable extends LinkedList<Integer> {
 		public PageTable() {
+			super();
 			for (int i = 0; i < Machine.processor().getNumPhysPages(); i++) {
-				freePage.offer(i);
+				offer(i);
 			}
 		}
 
 		public int getNumFreePages() {
-			int size = -1;
 			lock.acquire();
-			size = freePage.size();
+			int size = size();
 			lock.release();
 			return size;
 		}
 
 		public int getFreePage() {
-			Integer next = -1;
 			lock.acquire();
-			next = freePage.poll();
+			Integer next = poll();
 			lock.release();
 			return next == null ? -1 : next;
 		}
 
 		public void addFreePage(int i) {
 			lock.acquire();
-			freePage.offer(i);
+			offer(i);
 			lock.release();
 		}
 
-		private LinkedList<Integer> freePage = new LinkedList<>();
 		private Lock lock = new Lock();
 	}
+
+	public class ProcessTable extends HashMap<Integer, UserProcess> {
+		public ProcessTable() {
+			super();
+		}
+
+		public UserProcess addNewProcess(Integer pID, UserProcess process) {
+			lock.acquire();
+			UserProcess ret = put(pID, process);
+			lock.release();
+			return ret;
+		}
+
+		public UserProcess getProcess(Integer pID) {
+			lock.acquire();
+			UserProcess process = get(pID);
+			lock.release();
+			return process;
+		}
+
+		public int getProcessNum() {
+			lock.acquire();
+			int size = size();
+			lock.release();
+			return size;
+		}
+
+		Lock lock = new Lock();
+	}
+
+	public static ProcessTable processTable;
 
 	/** Globally accessible reference to the synchronized console. */
 	public static SynchConsole console;
