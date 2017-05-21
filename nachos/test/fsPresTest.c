@@ -5,7 +5,7 @@
 int main() {
     char buffer[5000];
     int file, newfile;
-    int length, i, j, flag;
+    int length, i, flag;
     int files[20];
     char name[8] = "f00.txt";
 
@@ -27,17 +27,19 @@ int main() {
         name[12] = '0' + (i + 1) % 10;
         name[11] = i < 9 ? '0' : '1';
         files[i] = creat(name);
-        printf("creating file %d, %d\n", i + 1, files[i]);
+        printf("creating file $s, %d\n", name, files[i]);
     }
 
-    for (i = 0, j = 15; i < 5; i++, j++) {
+    for (i = 0; i < 6; i++) {
         flag = close(files[i]);
         printf("closing file %d, %d\n", i + 1, flag);
+    }
 
-        name[12] = '0' + (j + 1) % 10;
-        name[11] = j < 9 ? '0' : '1';
+    for (i = 14; i < 20; i++) {
+        name[12] = '0' + (i + 1) % 10;
+        name[11] = i < 9 ? '0' : '1';
         files[i] = creat(name);
-        printf("creating file %d, %d\n", j + 1, files[j]);
+        printf("creating file %s, %d\n", name, files[i]);
     }
 
     for (i = 0; i < 20; i++) {
