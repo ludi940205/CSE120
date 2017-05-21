@@ -393,7 +393,9 @@ public class UserProcess {
 		UserProcess parentProcess = UserKernel.processTable.getProcess(parentPID);
 		if (parentProcess != null) {
 			parentProcess.childrenExitStatus.put(pID, status);
+			parentProcess.joinLock.acquire();
 			parentProcess.joinCondition.wake();
+			parentProcess.joinLock.release();
 		}
 
 		if (UserKernel.processTable.getProcessNum() == 1) {
@@ -438,7 +440,9 @@ public class UserProcess {
 
 		Integer exitStatus = childrenExitStatus.get(childPID);
 		if (exitStatus == null) {
+			joinLock.acquire();
 			joinCondition.sleep();
+			joinLock.release();
 			exitStatus = childrenExitStatus.get(childPID);
 		}
 
