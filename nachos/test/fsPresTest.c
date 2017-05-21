@@ -3,7 +3,7 @@
 #include "syscall.h"
 
 int main() {
-    char buffer[5000];
+//    char buffer[5000];
     int file, newfile;
     int length, i, flag;
     int files[20];
