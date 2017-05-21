@@ -3,7 +3,7 @@
 #include "syscall.h"
 
 int main() {
-    int childPID, i;
+    int childPID[10], i;
     int* status;
     char name[1][10] = {"T0"};
 
@@ -11,9 +11,11 @@ int main() {
 
     for (i = 0; i < 10; i++) {
         name[0][1] = '0' + i;
-        childPID = exec("sucThread.coff", 1, name);
-        join(childPID, status);
+        childPID[i] = exec("sucThread.coff", 1, name);
     }
+
+//    for (i = 0; i < 10; i++)
+//        join(childPID[i], status);
 
     printf("Finished main\n");
 

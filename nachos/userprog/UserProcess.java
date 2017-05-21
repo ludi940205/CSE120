@@ -386,19 +386,22 @@ public class UserProcess {
 		fdTable.clean();
 		unloadSections();
 		coff.close();
+
 		for (int childPID : childrenExitStatus.keySet()) {
-			UserKernel.processTable.getProcess(childPID).parentPID = -1;
+			if (UserKernel.processTable.stillRunning(childPID))
+				UserKernel.processTable.getProcess(childPID).parentPID = -1;
 		}
 
 		UserProcess parentProcess = UserKernel.processTable.getProcess(parentPID);
 		if (parentProcess != null) {
-			parentProcess.childrenExitStatus.put(pID, status);
 			parentProcess.joinLock.acquire();
+			parentProcess.childrenExitStatus.put(pID, status);
 			parentProcess.joinCondition.wake();
 			parentProcess.joinLock.release();
 		}
 
-		if (UserKernel.processTable.getProcessNum() == 1) {
+		UserKernel.processTable.removeProcess(pID);
+		if (UserKernel.processTable.getProcessNum() == 0) {
 			Kernel.kernel.terminate();
 		}
 		KThread.finish();
@@ -412,11 +415,11 @@ public class UserProcess {
 
 		String[] args = new String[argc];
 		for (int i = 0; i < argc; i++) {
-			byte[] buffer = new byte[4];
-			if (readVirtualMemory(ppArgv, buffer) != 4)
-				return -1;
-			int pArgv = Lib.bytesToInt(buffer, 0);
-			args[i] = readVirtualMemoryString(pArgv, maxStrLen);
+//			byte[] buffer = new byte[4];
+//			if (readVirtualMemory(ppArgv, buffer) != 4)
+//				return -1;
+//			int pArgv = Lib.bytesToInt(buffer, 0);
+			args[i] = readVirtualMemoryString(ppArgv, maxStrLen);
 			if (args[i] == null)
 				return -1;
 		}
@@ -438,13 +441,13 @@ public class UserProcess {
 		if (childProcess == null)
 			return -1;
 
+		joinLock.acquire();
 		Integer exitStatus = childrenExitStatus.get(childPID);
 		if (exitStatus == null) {
-			joinLock.acquire();
 			joinCondition.sleep();
-			joinLock.release();
 			exitStatus = childrenExitStatus.get(childPID);
 		}
+		joinLock.release();
 
 		byte[] buffer = Lib.bytesFromInt(exitStatus);
 		if (writeVirtualMemory(pStatus, buffer) != 4)

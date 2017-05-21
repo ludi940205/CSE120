@@ -165,11 +165,25 @@ public class UserKernel extends ThreadedKernel {
 			return process;
 		}
 
+		public UserProcess removeProcess(Integer pID) {
+			lock.acquire();
+			UserProcess process = remove(pID);
+			lock.release();
+			return process;
+		}
+
 		public int getProcessNum() {
 			lock.acquire();
 			int size = size();
 			lock.release();
 			return size;
+		}
+
+		public boolean stillRunning(Integer pID) {
+			lock.acquire();
+			boolean ret = containsKey(pID);
+			lock.release();
+			return ret;
 		}
 
 		Lock lock = new Lock();
