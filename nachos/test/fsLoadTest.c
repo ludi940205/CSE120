@@ -10,7 +10,7 @@ int main() {
     printf("creating file %d, %d\n", 1, files[0]);
 
     flag = close(files[0]);
-    printf("closing file %d, %d\n", 1, flag)
+    printf("closing file %d, %d\n", 1, flag);
 
     return 0;
 }
