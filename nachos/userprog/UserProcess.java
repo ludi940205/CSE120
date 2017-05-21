@@ -141,7 +141,7 @@ public class UserProcess {
 		if (pAddr < 0 || pAddr >= memory.length)
 			return 0;
 
-		int amount = Math.min(length, pageSize - offset);
+		int amount = Math.min(length, pageSize - pageOffset);
 		System.arraycopy(memory, pAddr, data, offset, amount);
 
 		return amount;
@@ -410,7 +410,7 @@ public class UserProcess {
 		while (pos < count && pos < file.length()) {
 			if (file.read(pos, dummyBuffer, 0, bufferSize) == -1)
 				return -1;
-			pos += writeVirtualMemory(bufferVAddr + pos, dummyBuffer, 0, count - pos);
+			pos += writeVirtualMemory(bufferVAddr + pos, dummyBuffer, 0, Math.min(bufferSize, count - pos));
 		}
 		return 0;
 	}
@@ -426,7 +426,7 @@ public class UserProcess {
 
 		int pos = 0;
 		while(pos < count) {
-			int amount = readVirtualMemory(bufferVAddr, dummyBuffer, pos, Math.min(bufferSize, count - pos));
+			int amount = readVirtualMemory(bufferVAddr + pos, dummyBuffer, 0, Math.min(bufferSize, count - pos));
 			if (fd.getPosition() > STDOUT) {
 				if (file.write(pos, dummyBuffer, 0, amount) == -1)
 					return -1;
