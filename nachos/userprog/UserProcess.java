@@ -24,10 +24,11 @@ public class UserProcess {
 	 * Allocate a new process.
 	 */
 	public UserProcess() {
-		int numPhysPages = Machine.processor().getNumPhysPages();
-
 		fdTable = new FileDescriptorTable();
-		UserKernel.processTable.addNewProcess(pID, this);
+
+		pIDLock.acquire();
+		pID = currPID++;
+		pIDLock.release();
 	}
 
 	/**
@@ -138,7 +139,6 @@ public class UserProcess {
 		int ppn = pageTable[vpn].ppn;
 		int pAddr = ppn * pageSize + pageOffset;
 
-		// for now, just assume that virtual addresses equal physical addresses
 		if (pAddr < 0 || pAddr >= memory.length)
 			return 0;
 
@@ -187,6 +187,8 @@ public class UserProcess {
 
 		// for now, just assume that virtual addresses equal physical addresses
 		if (pAddr < 0 || pAddr >= memory.length)
+			return 0;
+		if (pageTable[vpn].readOnly)
 			return 0;
 
 		int amount = Math.min(length, pageSize - offset);
@@ -375,6 +377,8 @@ public class UserProcess {
 	 * Handle the halt() system call.
 	 */
 	private int handleHalt() {
+		if (pID != 1)
+			return -1;
 
 		Machine.halt();
 
@@ -426,10 +430,10 @@ public class UserProcess {
 
 		UserProcess childProcess = newUserProcess();
 		if (!childProcess.execute(fileName, args)) {
-			Lib.debug(dbgProcess, "Not enough memory");
 			return -1;
 		}
 
+		UserKernel.processTable.addNewProcess(childProcess.pID, this);
 		childrenExitStatus.put(childProcess.pID, null);
 		childProcess.parentPID = this.pID;
 
@@ -493,7 +497,10 @@ public class UserProcess {
 				if (file.read(pos, dummyBuffer, 0, bufferSize) == -1)
 					return -1;
 			}
-			pos += writeVirtualMemory(bufferVAddr + pos, dummyBuffer, 0, Math.min(bufferSize, count - pos));
+			int amount = writeVirtualMemory(bufferVAddr + pos, dummyBuffer, 0, Math.min(bufferSize, count - pos));
+			if (amount == 0)
+				return -1;
+			pos += amount;
 		}
 		return 0;
 	}
@@ -510,6 +517,9 @@ public class UserProcess {
 		int pos = 0;
 		while(pos < count) {
 			int amount = readVirtualMemory(bufferVAddr + pos, dummyBuffer, 0, Math.min(bufferSize, count - pos));
+			if (amount == 0)
+				return -1;
+
 			if (fd.getPosition() > STDOUT) {
 				if (file.write(pos, dummyBuffer, 0, amount) == -1)
 					return -1;
@@ -518,6 +528,7 @@ public class UserProcess {
 				if (file.write(dummyBuffer, 0, amount) == -1)
 					return -1;
 			}
+
 			pos += amount;
 		}
 
@@ -822,7 +833,7 @@ public class UserProcess {
 
 	private FileDescriptorTable fdTable;
 
-	private int pID = currPID++;
+	private int pID;
 
 	private int parentPID = -1;
 
@@ -831,6 +842,8 @@ public class UserProcess {
 	private Lock joinLock = new Lock();
 
 	private Condition joinCondition = new Condition(joinLock);
+
+	private static Lock pIDLock = new Lock();
 
 	private static int currPID = 1;
 
