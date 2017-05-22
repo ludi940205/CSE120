@@ -8,7 +8,7 @@ void loopWait(int loopNum) {
 }
 
 void exceptionTest() {
-	char argv[1][10] = "0";
+	char argv[1][10] = {"0"};
 	int pid[10], i, *status;
 
 	for (i = 0; i < 3; i++) {
@@ -88,8 +88,6 @@ void fileSystemPressureTest() {
         flag = close(files[i]);
         printf("closing file %d, %d\n", i + 1, flag);
     }
-
-    return 0;
 }
 
 void fileSystemFailTest() {
@@ -112,8 +110,6 @@ void fileSystemFailTest() {
 
     close(file);
     printf("end\n");
-
-    return 0;
 }
 
 void syscallBasicTest() {
