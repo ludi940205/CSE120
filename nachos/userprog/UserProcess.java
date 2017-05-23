@@ -661,17 +661,17 @@ public class UserProcess {
 		Processor processor = Machine.processor();
 
 		switch (cause) {
-		case Processor.exceptionSyscall:
-			int result = handleSyscall(processor.readRegister(Processor.regV0),
-					processor.readRegister(Processor.regA0),
-					processor.readRegister(Processor.regA1),
-					processor.readRegister(Processor.regA2),
-					processor.readRegister(Processor.regA3));
-			processor.writeRegister(Processor.regV0, result);
-			processor.advancePC();
-			break;
-			case Processor.exceptionReadOnly:
+			case Processor.exceptionSyscall:
+				int result = handleSyscall(processor.readRegister(Processor.regV0),
+						processor.readRegister(Processor.regA0),
+						processor.readRegister(Processor.regA1),
+						processor.readRegister(Processor.regA2),
+						processor.readRegister(Processor.regA3));
+				processor.writeRegister(Processor.regV0, result);
 				processor.advancePC();
+				break;
+			case Processor.exceptionReadOnly:
+				handleExit(1);
 				break;
 
 		default:

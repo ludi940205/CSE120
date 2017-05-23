@@ -124,6 +124,7 @@ void syscallBasicTest() {
         name[0][1] = '0' + i;
         printf("Creating %s\n", name[0]);
         childPID[i] = exec("testLoopThread.coff", 1, name);
+        printf("Child PID: %d\n", childPID[i]);
     }
 
    for (i = 0; i < 10; i++)
