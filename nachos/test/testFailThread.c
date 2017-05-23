@@ -25,7 +25,7 @@ int main(int argc, char const *argv[])
 			printf("Segmentation fault\n");
 			break;
 		case 2:
-//			exceedMemory();
+			exceedMemory();
 			break;
 	}
 
