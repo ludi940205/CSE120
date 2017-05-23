@@ -32,7 +32,6 @@ int main() {
     retval = join(pid[0], &exitstatus);
     if (retval != 0) {
         LOG("++ISPRMGR VAR7: [ENDED] FAIL\n");
-        break;
     }
     LOG("++ISPRMGR VAR7: first time invoke join successfully\n");
 
@@ -40,11 +39,10 @@ int main() {
     retval = join(pid[0], &exitstatus);
     if (retval == 0) {
         LOG("++ISPRMGR VAR7: [ENDED] FAILED to join process %d\n", pid[0]);
-        break;
     }
     LOG("++ISPRMGR VAR7: failed to invoke join second time as exptected\n");
 
     LOG("++ISPRMGR VAR7: [ENDED] SUCCESS\n");
 
-    break;
+    return 0;
 }
