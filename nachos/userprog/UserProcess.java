@@ -670,6 +670,9 @@ public class UserProcess {
 			processor.writeRegister(Processor.regV0, result);
 			processor.advancePC();
 			break;
+			case Processor.exceptionReadOnly:
+				processor.advancePC();
+				break;
 
 		default:
 			Lib.debug(dbgProcess, "Unexpected exception: "
