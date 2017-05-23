@@ -547,7 +547,7 @@ public class UserProcess {
 
 	private int handleUnlink(int vAddr) {
 		String fileName = readVirtualMemoryString(vAddr, maxStrLen);
-		if (fdTable.delete(fileName))
+		if (fdTable.unlink(fileName))
 			return 0;
 		return -1;
 	}
@@ -787,12 +787,10 @@ public class UserProcess {
 			return table[pos];
 		}
 
-		public boolean delete(String fileName) {
+		public boolean unlink(String fileName) {
 			for (int i = 2; i < maxFileCount; i++) {
 				if (table[i].getName().equals(fileName)) {
-					table[i].clean();
-					count--;
-					return true;
+					return UserKernel.fileSystem.remove(table[i].fileName);
 				}
 			}
 			return false;

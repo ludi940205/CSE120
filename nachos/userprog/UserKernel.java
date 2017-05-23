@@ -5,6 +5,8 @@ import nachos.threads.*;
 import nachos.userprog.*;
 
 import javax.crypto.Mac;
+import java.io.File;
+import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -187,6 +189,12 @@ public class UserKernel extends ThreadedKernel {
 		}
 
 		Lock lock = new Lock();
+	}
+
+	public class FileTable extends HashMap<String, Integer> {
+		public FileTable() {
+		}
+
 	}
 
 	public static ProcessTable processTable;
