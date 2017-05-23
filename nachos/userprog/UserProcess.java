@@ -469,16 +469,20 @@ public class UserProcess {
 		if (fileName == null)
 			return -1;
 		FileDescriptor fd = fdTable.create(fileName);
-		if (fd != null && fd.isValid())
+		if (fd != null && fd.isValid()) {
+//			UserKernel.fileTable.increFileRefCount(fileName, pID);
 			return fd.getPosition();
+		}
 		return -1;
 	}
 
 	private int handleOpen(int a0) {
 		String fileName = readVirtualMemoryString(a0, maxStrLen);
 		FileDescriptor fd = fdTable.open(fileName);
-		if (fd != null && fd.isValid())
+		if (fd != null && fd.isValid()) {
+//			UserKernel.fileTable.increFileRefCount(fileName, pID);
 			return fd.getPosition();
+		}
 		return -1;
 	}
 
@@ -540,8 +544,9 @@ public class UserProcess {
 	}
 
 	private int handleClose(int fd) {
-		if (fdTable.delete(fd))
+		if (fdTable.delete(fd)) {
 			return 0;
+		}
 		return -1;
 	}
 
@@ -809,6 +814,7 @@ public class UserProcess {
 
 		public void clean() {
 			for (int i = 0; i < table.length; i++) {
+//				UserKernel.fileTable.decreFileRefCount(table[i].fileName, pID);
 				table[i].clean();
 				table[i] = null;
 			}

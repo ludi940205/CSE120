@@ -8,7 +8,7 @@ void loopWait(int loopNum) {
 }
 
 void exceptionTest() {
-	char argv[1][10] = {"0"};
+	char* argv[10] = {"0"};
 	int pid[10], i, *status, joinRet;
 
 	for (i = 0; i < 3; i++) {
@@ -119,7 +119,7 @@ void fileSystemFailTest() {
 void syscallBasicTest() {
 	int childPID[10], i, joinRet;
     int* status;
-    char name[1][10] = {"T0"};
+    char* name[10] = {"T0"};
 
     printf("Inside main\n");
 

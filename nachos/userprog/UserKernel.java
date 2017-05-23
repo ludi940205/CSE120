@@ -4,11 +4,7 @@ import nachos.machine.*;
 import nachos.threads.*;
 import nachos.userprog.*;
 
-import javax.crypto.Mac;
-import java.io.File;
-import java.security.PublicKey;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.*;
 
 /**
  * A kernel that can support multiple user processes.
@@ -38,6 +34,7 @@ public class UserKernel extends ThreadedKernel {
 
 		pageTable = new PageTable();
 		processTable = new ProcessTable();
+//		fileTable = new FileTable();
 	}
 
 	/**
@@ -191,13 +188,36 @@ public class UserKernel extends ThreadedKernel {
 		Lock lock = new Lock();
 	}
 
-	public class FileTable extends HashMap<String, Integer> {
-		public FileTable() {
-		}
-
-	}
+//	public class FileTable extends HashMap<String, HashSet<Integer>> {
+//		public FileTable() {
+//		}
+//
+//		public void increFileRefCount(String fileName, int pID) {
+//			lock.acquire();
+//			if (containsKey(fileName))
+//				get(fileName).add(pID);
+//			else
+//				put(fileName, new HashSet<>(pID));
+//			lock.release();
+//		}
+//
+//		public int decreFileRefCount(String fileName, int pID) {
+//			lock.acquire();
+//			if (!containsKey(fileName) || get(fileName).size() <= 0)
+//				return -1;
+//			HashSet<Integer> set = get(fileName);
+//			set.remove(pID);
+//			int ret = set.size();
+//			lock.release();
+//			return ret;
+//		}
+//
+//		private Lock lock;
+//	}
 
 	public static ProcessTable processTable;
+
+//	public static FileTable fileTable;
 
 	/** Globally accessible reference to the synchronized console. */
 	public static SynchConsole console;
