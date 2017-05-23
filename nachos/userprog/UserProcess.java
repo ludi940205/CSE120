@@ -464,7 +464,7 @@ public class UserProcess {
 		if (writeVirtualMemory(pStatus, buffer) != 4)
 			return -1;
 
-		return exitStatus == 0 ? 0 : 1;
+		return exitStatus == 0 ? 1 : 0;
 	}
 
 	private int handleCreate(int a0) {
@@ -825,6 +825,7 @@ public class UserProcess {
 		private final int maxFileCount = 16;
 		private FileDescriptor[] table = new FileDescriptor[maxFileCount];
 		private int count = 2;
+		public boolean stdoutOccupied = false;
 	}
 
 	/** The program being run by this process. */
