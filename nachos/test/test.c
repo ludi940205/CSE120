@@ -150,7 +150,7 @@ void testRoute(int id) {
 
 int main() {
 	int i;
-	for (i = 0; i < 5; i++)
+	for (i = 1; i < 5; i++)
 		testRoute(i);
 
 	return 0;
