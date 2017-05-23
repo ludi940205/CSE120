@@ -406,11 +406,13 @@ public class UserProcess {
 			parentProcess.joinLock.release();
 		}
 
+//		System.out.println("exit status" + pID + status);
+
 		UserKernel.processTable.removeProcess(pID);
 		if (UserKernel.processTable.getProcessNum() == 0) {
 			Kernel.kernel.terminate();
 		}
-		KThread.finish();
+		UThread.finish();
 	}
 
 	private int handleExec(int pFile, int argc, int ppArgv) {
@@ -432,6 +434,7 @@ public class UserProcess {
 
 		UserProcess childProcess = newUserProcess();
 		if (!childProcess.execute(fileName, args)) {
+			UserKernel.processTable.removeProcess(childProcess.pID);
 			return -1;
 		}
 

@@ -137,14 +137,19 @@ void testRoute(int id) {
 		case 0:
 			/* exception test */
 			exceptionTest();
+			break;
 		case 1:
 			fileSystemBasicTest();
+			break;
 		case 2:
 			fileSystemPressureTest();
+			break;
 		case 3:
 			fileSystemFailTest();
+			break;
 		case 4:
 			syscallBasicTest();
+			break;
 	}
 }
 
