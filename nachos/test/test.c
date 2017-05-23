@@ -9,14 +9,15 @@ void loopWait(int loopNum) {
 
 void exceptionTest() {
 	char argv[1][10] = {"0"};
-	int pid[10], i, *status;
+	int pid[10], i, *status, joinRet;
 
 	for (i = 0; i < 3; i++) {
 	    argv[0][0] = '0' + i;
 		pid[i] = exec("testFailThread.coff", 1, argv);
 		printf("Exception test PID: %d\n", pid[i]);
-		join(pid[i], status);
-		printf("status: %d", *status);
+		joinRet = join(pid[i], status);
+		printf("Exit status: %d\n", *status);
+		printf("Join return value: %d\n", joinRet);
 	}
 }
 
@@ -116,7 +117,7 @@ void fileSystemFailTest() {
 }
 
 void syscallBasicTest() {
-	int childPID[10], i;
+	int childPID[10], i, joinRet;
     int* status;
     char name[1][10] = {"T0"};
 
@@ -129,8 +130,11 @@ void syscallBasicTest() {
         printf("Child PID: %d\n", childPID[i]);
     }
 
-   for (i = 0; i < 10; i++)
-       join(childPID[i], status);
+   for (i = 0; i < 10; i++) {
+        joinRet = join(childPID[i], status);
+        printf("Exit status: %d\n", *status);
+        printf("Join return value: %d\n", joinRet);
+   }
 
     printf("Finished main\n");
 }
