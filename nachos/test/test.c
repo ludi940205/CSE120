@@ -14,6 +14,7 @@ void exceptionTest() {
 	for (i = 0; i < 3; i++) {
 	    argv[0][0] = '0' + i;
 		pid[i] = exec("testFailThread.coff", 1, argv);
+		printf("Exception test PID: %d\n", pid[i]);
 		join(pid[i], status);
 	}
 }
