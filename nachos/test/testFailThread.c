@@ -9,7 +9,7 @@ void exceedMemory() {
 int main(int argc, char const *argv[])
 {
 	int i = 0, a = 5, b = 1, c;
-	char* c;
+	char* ch;
 	if (argc != 1)
 		exit(2);
 	i = argv[0][0] - '0';
@@ -21,8 +21,8 @@ int main(int argc, char const *argv[])
 			printf("%d / %d = %d\n", a, b, c);
 			break;
 		case 1:
-			c[0] = 'a';
-			printf("Segmentation fault\n")
+			ch[0] = 'a';
+			printf("Segmentation fault\n");
 			break;
 		case 2:
 //			exceedMemory();
