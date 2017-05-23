@@ -18,7 +18,7 @@ int main(int argc, char const *argv[])
 	switch (i) {
 		case 0:
 		    printf("test 0\n");
-			a /= b;
+//			a /= b;
 			break;
 		case 1:
 			c[0] = 'a';
