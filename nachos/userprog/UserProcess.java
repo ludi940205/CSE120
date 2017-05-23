@@ -423,11 +423,11 @@ public class UserProcess {
 
 		String[] args = new String[argc];
 		for (int i = 0; i < argc; i++) {
-//			byte[] buffer = new byte[4];
-//			if (readVirtualMemory(ppArgv, buffer) != 4)
-//				return -1;
-//			int pArgv = Lib.bytesToInt(buffer, 0);
-			args[i] = readVirtualMemoryString(ppArgv, maxStrLen);
+			byte[] buffer = new byte[4];
+			if (readVirtualMemory(ppArgv + 4 * i, buffer) != 4)
+				return -1;
+			int pArgv = Lib.bytesToInt(buffer, 0);
+			args[i] = readVirtualMemoryString(pArgv, maxStrLen);
 			if (args[i] == null)
 				return -1;
 		}
@@ -445,9 +445,12 @@ public class UserProcess {
 	}
 
 	private int handleJoin(int childPID, int pStatus) {
-		UserProcess childProcess = UserKernel.processTable.getProcess(childPID);
-		if (childProcess == null)
+		if (!childrenExitStatus.containsKey(childPID))
 			return -1;
+
+//		UserProcess childProcess = UserKernel.processTable.getProcess(childPID);
+//		if (childProcess == null)
+//			return -1;
 
 		joinLock.acquire();
 		Integer exitStatus = childrenExitStatus.get(childPID);
@@ -461,7 +464,7 @@ public class UserProcess {
 		if (writeVirtualMemory(pStatus, buffer) != 4)
 			return -1;
 
-		return exitStatus == 0 ? 1 : 0;
+		return exitStatus == 0 ? 0 : 1;
 	}
 
 	private int handleCreate(int a0) {
@@ -675,13 +678,11 @@ public class UserProcess {
 				processor.writeRegister(Processor.regV0, result);
 				processor.advancePC();
 				break;
-			case Processor.exceptionReadOnly:
-				handleExit(1);
-				break;
 
 		default:
 			Lib.debug(dbgProcess, "Unexpected exception: "
 					+ Processor.exceptionNames[cause]);
+			handleExit(-1);
 			Lib.assertNotReached("Unexpected exception");
 		}
 	}
