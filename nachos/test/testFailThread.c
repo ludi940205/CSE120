@@ -13,14 +13,18 @@ int main(int argc, char const *argv[])
 	if (argc != 1)
 		exit(2);
 	i = argv[0][0] - '0';
+	printf("%d\n", i);
 
 	switch (i) {
 		case 0:
 			a /= b;
+			break;
 		case 1:
 			c[0] = 'a';
+			break;
 		case 2:
 			exceedMemory();
+			break;
 	}
 
 	return 0;
