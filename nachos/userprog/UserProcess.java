@@ -29,6 +29,8 @@ public class UserProcess {
 		pIDLock.acquire();
 		pID = currPID++;
 		pIDLock.release();
+
+		UserKernel.processTable.addNewProcess(pID, this);
 	}
 
 	/**
@@ -433,7 +435,6 @@ public class UserProcess {
 			return -1;
 		}
 
-		UserKernel.processTable.addNewProcess(childProcess.pID, this);
 		childrenExitStatus.put(childProcess.pID, null);
 		childProcess.parentPID = this.pID;
 

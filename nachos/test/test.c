@@ -12,6 +12,7 @@ void exceptionTest() {
 	int pid[10], i, *status;
 
 	for (i = 0; i < 3; i++) {
+	    argv[0][0] = '0' + i;
 		pid[i] = exec("testFailThread.coff", 1, argv);
 		join(pid[i], status);
 	}
@@ -121,6 +122,7 @@ void syscallBasicTest() {
 
     for (i = 0; i < 10; i++) {
         name[0][1] = '0' + i;
+        printf("Creating %s\n", name[0]);
         childPID[i] = exec("testLoopThread.coff", 1, name);
     }
 
