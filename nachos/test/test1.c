@@ -35,7 +35,7 @@ int main() {
     }
     LOG("++ISPRMGR VAR7: first time invoke join successfully\n");
 
-    LOG("++ISPRMGR VAR7: Issue join again to get exit status of chile process\n", pid[0]);
+    LOG("++ISPRMGR VAR7: Issue join again to get exit status of chile process %d\n", pid[0]);
     retval = join(pid[0], &exitstatus);
     if (retval == 0) {
         LOG("++ISPRMGR VAR7: [ENDED] FAILED to join process %d\n", pid[0]);
