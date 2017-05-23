@@ -11,7 +11,8 @@ int main() {
 
     for (i = 0; i < 10; i++) {
         name[0][1] = '0' + i;
-        childPID[i] = exec("sucThread.coff", 1, name);
+        printf("Creating %s\n", name[0]);
+        childPID[i] = exec("testLoopThread.coff", 1, name);
     }
 
 //    for (i = 0; i < 10; i++)
