@@ -119,8 +119,8 @@ void route(int variation, char dbg_flag)
             printf("++ISPRMGR VAR2: [STARTED]\n");
             executable = "cp.coff";
             _argv[0] = executable;
-            _argv[1] = "cat.coff";
-            _argv[2] = "cat1.coff";
+            _argv[1] = "cat.c";
+            _argv[2] = "cat1.c";
             _argc = 3;
 
             for (i = 0; i <  MAXPROCESS; i++) {

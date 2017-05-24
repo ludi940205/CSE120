@@ -418,7 +418,7 @@ public class UserProcess {
 //		System.out.println("exit status" + pID + status);
 
 		UserKernel.processTable.removeProcess(pID);
-		if (UserKernel.processTable.getProcessNum() == 0) {
+		if (UserKernel.processTable.getProcessNum() == 0 || pID == 1) {
 			Kernel.kernel.terminate();
 		}
 		UThread.finish();
