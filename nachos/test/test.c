@@ -94,7 +94,7 @@ void fileSystemPressureTest() {
 }
 
 void fileSystemFailTest() {
-	char buffer[5000];
+	char buffer[5000], largeBuffer[20000];
     int file, newfile;
     int length;
     int i;
@@ -110,6 +110,16 @@ void fileSystemFailTest() {
     i = write(file, buffer, 100);
     if (i == -1)
         printf("write failed\n");
+
+    newFile = open("syscall.h");
+    if (newFile == -1)
+        printf("file does not exist\n");
+
+    length = read(newFile, largeBuffer, 20000);
+    if (length == -1)
+        printf("read failed\n");
+    else
+        printf("read %d bytes", length);
 
     close(file);
     printf("end\n");
