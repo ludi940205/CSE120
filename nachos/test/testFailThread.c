@@ -3,12 +3,12 @@
 #include "stdlib.h"
 
 void exceedMemory() {
-	char str[10000];
+	char str[100000];
 }
 
 int main(int argc, char const *argv[])
 {
-	int i = 0, a = 5, b = 1, c;
+	int i = 0, a = 5, b = 0, c;
 	char* ch;
 	if (argc != 1)
 		exit(2);
