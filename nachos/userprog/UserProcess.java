@@ -552,7 +552,7 @@ public class UserProcess {
 	}
 
 	private int handleClose(int fd) {
-		if (fdTable.delete(fd)) {
+		if (fdTable.close(fd)) {
 			return 0;
 		}
 		return -1;
@@ -769,6 +769,7 @@ public class UserProcess {
 					if (fd.isValid()) {
 						table[i] = fd;
 						count++;
+						UserKernel.fileTable.increFileRefCount(fileName);
 						return table[i];
 					}
 					else
@@ -787,6 +788,7 @@ public class UserProcess {
 					if (fd.isValid()) {
 						table[i] = fd;
 						count++;
+						UserKernel.fileTable.increFileRefCount(fileName);
 						return table[i];
 					}
 					else
@@ -805,15 +807,16 @@ public class UserProcess {
 		public boolean unlink(String fileName) {
 			for (int i = 2; i < maxFileCount; i++) {
 				if (table[i].getName().equals(fileName)) {
-					return UserKernel.fileSystem.remove(table[i].fileName);
+					UserKernel.fileTable.decreFileRefCount(fileName, true);
 				}
 			}
-			return false;
+			return UserKernel.fileSystem.remove(fileName);
 		}
 
-		public boolean delete(int pos) {
+		public boolean close(int pos) {
 			if (pos < 0 || pos >= maxFileCount)
 				return false;
+			UserKernel.fileTable.decreFileRefCount(table[pos].getName(), false);
 			table[pos].clean();
 			count--;
 			return true;
@@ -821,17 +824,16 @@ public class UserProcess {
 
 		public void clean() {
 			for (int i = 0; i < table.length; i++) {
-//				UserKernel.fileTable.decreFileRefCount(table[i].fileName, pID);
+				UserKernel.fileTable.decreFileRefCount(table[i].fileName, false);
 				table[i].clean();
 				table[i] = null;
 			}
-			count = 0;
+			count = 2;
 		}
 
 		private final int maxFileCount = 16;
 		private FileDescriptor[] table = new FileDescriptor[maxFileCount];
 		private int count = 2;
-		public boolean stdoutOccupied = false;
 	}
 
 	/** The program being run by this process. */

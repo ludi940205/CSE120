@@ -1,5 +1,6 @@
 package nachos.userprog;
 
+import javafx.util.Pair;
 import nachos.machine.*;
 import nachos.threads.*;
 import nachos.userprog.*;
@@ -34,7 +35,7 @@ public class UserKernel extends ThreadedKernel {
 
 		pageTable = new PageTable();
 		processTable = new ProcessTable();
-//		fileTable = new FileTable();
+		fileTable = new FileTable();
 	}
 
 	/**
@@ -188,36 +189,55 @@ public class UserKernel extends ThreadedKernel {
 		Lock lock = new Lock();
 	}
 
-//	public class FileTable extends HashMap<String, HashSet<Integer>> {
-//		public FileTable() {
-//		}
-//
-//		public void increFileRefCount(String fileName, int pID) {
-//			lock.acquire();
-//			if (containsKey(fileName))
-//				get(fileName).add(pID);
-//			else
-//				put(fileName, new HashSet<>(pID));
-//			lock.release();
-//		}
-//
-//		public int decreFileRefCount(String fileName, int pID) {
-//			lock.acquire();
-//			if (!containsKey(fileName) || get(fileName).size() <= 0)
-//				return -1;
-//			HashSet<Integer> set = get(fileName);
-//			set.remove(pID);
-//			int ret = set.size();
-//			lock.release();
-//			return ret;
-//		}
-//
-//		private Lock lock;
-//	}
+	/**
+	 *  Record opening files.
+	 *  The key of the table are filenames; the value of the table are their reference count
+	 *  and a unlink flag. When the unlink flag is set to true, the file is deleted from the
+	 *  file system when the reference count equals 0.
+	 */
+	public class FileTable extends HashMap<String, Pair<Integer, Boolean>> {
+		public FileTable() {
+		}
+
+		public void increFileRefCount(String fileName) {
+			lock.acquire();
+			if (!containsKey(fileName))
+				put(fileName, new Pair<>(0, false));
+			else {
+				Pair<Integer, Boolean> pair = get(fileName);
+				put(fileName, new Pair<>(pair.getKey() + 1, pair.getValue()));
+			}
+			lock.release();
+		}
+
+		public int decreFileRefCount(String fileName, boolean unlink) {
+			lock.acquire();
+			int refCount;
+			try {
+				if (fileName.equals("") || !containsKey(fileName))
+					return -1;
+				refCount = get(fileName).getKey();
+				boolean newUnlink = get(fileName).getValue() | unlink;
+				if (refCount <= 0)
+					return -1;
+				put(fileName, new Pair<>(--refCount, newUnlink));
+				if (newUnlink && refCount == 0) {
+					ThreadedKernel.fileSystem.remove(fileName);
+				}
+			}
+			finally {
+				lock.release();
+			}
+
+			return refCount;
+		}
+
+		private Lock lock = new Lock();
+	}
 
 	public static ProcessTable processTable;
 
-//	public static FileTable fileTable;
+	public static FileTable fileTable;
 
 	/** Globally accessible reference to the synchronized console. */
 	public static SynchConsole console;
