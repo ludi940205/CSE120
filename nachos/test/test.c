@@ -8,11 +8,11 @@ void loopWait(int loopNum) {
 }
 
 void exceptionTest() {
-	char* argv[3] = {"0", "1", "2"};
+	char* argv[3][1] = {"0", "1", "2"};
 	int pid[10], i, status, joinRet;
 
 	for (i = 0; i < 3; i++) {
-		pid[i] = exec("testFailThread.coff", 1, argv);
+		pid[i] = exec("testFailThread.coff", 1, argv[i]);
 		printf("Exception test PID: %d\n", pid[i]);
 		joinRet = join(pid[i], &status);
 		printf("Exit status: %d\n", status);

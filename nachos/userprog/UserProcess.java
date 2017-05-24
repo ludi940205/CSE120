@@ -58,6 +58,11 @@ public class UserProcess {
 
 		new UThread(this).setName(name).fork();
 
+//		boolean intStatus = Machine.interrupt().disable();
+//		KThread.readyQueue.print();
+//		System.out.println();
+//		Machine.interrupt().restore(intStatus);
+
 		return true;
 	}
 
