@@ -115,7 +115,7 @@ void fileSystemFailTest() {
     if (newFile == -1)
         printf("file does not exist\n");
 
-    length = read(newFile, largeBuffer, 20000);
+    length = read(newFile, buffer, 20000);
     if (length == -1)
         printf("read failed\n");
     else

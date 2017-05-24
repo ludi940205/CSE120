@@ -517,7 +517,7 @@ public class UserProcess {
 
 		int pos = 0, startPos = fd.getPosition();
 		boolean breaking = false;
-		while (breaking && pos < count && (pos < file.length() || fd.getFd() == STDIN)) {
+		while (!breaking && pos < count && (pos < file.length() || fd.getFd() == STDIN)) {
 			int bytesRead;
 			if (fd.getFd() == STDIN)
 				bytesRead = file.read(dummyBuffer, 0, bufferSize);
@@ -555,26 +555,28 @@ public class UserProcess {
 
 		int pos = 0;
 		int startPos = fd.getPosition();
-		while(pos < count) {
-			int amount = readVirtualMemory(bufferVAddr + pos, dummyBuffer, 0, Math.min(bufferSize, count - pos));
-			if (amount == 0)
-				return -1;
+		try {
+			while (pos < count) {
+				int amount = readVirtualMemory(bufferVAddr + pos, dummyBuffer, 0, Math.min(bufferSize, count - pos));
+				if (amount == 0)
+					return -1;
 
-			int writeAmount;
-			if (fd.getFd() > STDOUT) {
-				writeAmount = file.write(startPos + pos, dummyBuffer, 0, amount);
-			}
-			else if (fd.getFd() == STDOUT) {
-				writeAmount = file.write(dummyBuffer, 0, amount);
-			}
-			else
-				return -1;
-			if (writeAmount != amount)
-				return -1;
+				int writeAmount;
+				if (fd.getFd() > STDOUT) {
+					writeAmount = file.write(startPos + pos, dummyBuffer, 0, amount);
+				} else if (fd.getFd() == STDOUT) {
+					writeAmount = file.write(dummyBuffer, 0, amount);
+				} else
+					return -1;
+				if (writeAmount != amount)
+					return -1;
 
-			pos += amount;
+				pos += amount;
+			}
 		}
-		fd.setPosition(pos + startPos);
+		finally {
+			fd.setPosition(pos + startPos);
+		}
 
 		return pos;
 	}
