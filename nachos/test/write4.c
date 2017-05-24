@@ -35,6 +35,7 @@ main ()
        i = 0;
        do {
 	   buffer[i] = getchar ();
+	   printf("%d\n", i);
        } while (buffer[i++] != '\n');
        buffer[i] = '\0';
 

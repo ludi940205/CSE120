@@ -504,7 +504,7 @@ public class UserProcess {
 		byte[] dummyBuffer = new byte[bufferSize];
 
 		int pos = 0;
-		while (pos < count && pos < file.length()) {
+		while (pos < count && (pos < file.length() || fd.getPosition() == STDIN)) {
 			if (fd.getPosition() == STDIN) {
 				if (file.read(dummyBuffer, 0, bufferSize) == -1)
 					return -1;
@@ -518,7 +518,7 @@ public class UserProcess {
 				return -1;
 			pos += amount;
 		}
-		return 0;
+		return pos;
 	}
 
 	private int handleWrite(int fileDescriptor, int bufferVAddr, int count) {
@@ -548,7 +548,7 @@ public class UserProcess {
 			pos += amount;
 		}
 
-		return 0;
+		return pos;
 	}
 
 	private int handleClose(int fd) {
