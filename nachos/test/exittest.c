@@ -16,8 +16,7 @@
 #define LOG printf
 
 void main() {
-        
-    // LOG("++TESTEXIT: invoke exit\n");
+    LOG("++TESTEXIT: invoke exit\n");
     exit(0);
 
     /* Should not get here */
