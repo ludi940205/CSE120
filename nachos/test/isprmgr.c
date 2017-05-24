@@ -130,7 +130,7 @@ void route(int variation, char dbg_flag)
                 printf("++ISPRMGR VAR2: Get PID %d after exec cp.coff\n", pid[i]);
             
                 for (j = 0; j < i; ++j)  {
-                    if (pid[j] == pid[i]) {
+                    if (pid[j] != -1 && pid[j] == pid[i]) {
                         printf("++ISPRMGR VAR2: FAILED, pid[%d] equals pid[%d]\n",
                                     pid[j], pid[i]);
                         exit(-1);
