@@ -117,13 +117,13 @@ void fileSystemFailTest() {
 
 void syscallBasicTest() {
 	int childPID[10], i, joinRet, status;
-    char* name[10] = {"T0", "T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9",};
+    char* name[10][1] = {"T0", "T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9",};
 
     printf("Inside main\n");
 
     for (i = 0; i < 10; i++) {
-        printf("Creating %s\n", name[0]);
-        childPID[i] = exec("testLoopThread.coff", 1, name);
+        printf("Creating %s\n", name[0][0]);
+        childPID[i] = exec("testLoopThread.coff", 1, name[i]);
         printf("Child PID: %d\n", childPID[i]);
     }
 
