@@ -94,7 +94,7 @@ void fileSystemPressureTest() {
 }
 
 void fileSystemFailTest() {
-	char buffer[5000], largeBuffer[20000];
+	char buffer[20000];
     int file, newFile;
     int length;
     int i;

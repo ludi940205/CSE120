@@ -516,7 +516,8 @@ public class UserProcess {
 		byte[] dummyBuffer = new byte[bufferSize];
 
 		int pos = 0, startPos = fd.getPosition();
-		while (pos < count && (pos < file.length() || fd.getFd() == STDIN)) {
+		boolean breaking = false;
+		while (breaking && pos < count && (pos < file.length() || fd.getFd() == STDIN)) {
 			int bytesRead;
 			if (fd.getFd() == STDIN)
 				bytesRead = file.read(dummyBuffer, 0, bufferSize);
@@ -528,8 +529,10 @@ public class UserProcess {
 			int bytesWrite = 0;
 			while (bytesWrite < bytesRead) {
 				int amount = writeVirtualMemory(bufferVAddr + pos, dummyBuffer, 0, Math.min(bytesRead, count - pos));
-				if (amount == 0)
-					return -1;
+				if (amount == 0) {
+					breaking = true;
+					break;
+				}
 				bytesWrite += amount;
 			}
 			pos += bytesWrite;
