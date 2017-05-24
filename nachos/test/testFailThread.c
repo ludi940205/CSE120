@@ -5,7 +5,7 @@
 void exceedMemory() {
 	char str[20000];
 
-	str[0] = '1';
+	str[20000] = '1';
 //	int i;
 //
 //	for (i = 0; i < 20000; i++)
