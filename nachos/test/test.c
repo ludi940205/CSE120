@@ -8,11 +8,10 @@ void loopWait(int loopNum) {
 }
 
 void exceptionTest() {
-	char* argv[10] = {"0"};
+	char* argv[3] = {"0", "1", "2"};
 	int pid[10], i, status, joinRet;
 
 	for (i = 0; i < 3; i++) {
-	    argv[0][0] = '0' + i;
 		pid[i] = exec("testFailThread.coff", 1, argv);
 		printf("Exception test PID: %d\n", pid[i]);
 		joinRet = join(pid[i], &status);
@@ -118,12 +117,11 @@ void fileSystemFailTest() {
 
 void syscallBasicTest() {
 	int childPID[10], i, joinRet, status;
-    char* name[10] = {"T0"};
+    char* name[10] = {"T0", "T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9",};
 
     printf("Inside main\n");
 
     for (i = 0; i < 10; i++) {
-        name[0][1] = '0' + i;
         printf("Creating %s\n", name[0]);
         childPID[i] = exec("testLoopThread.coff", 1, name);
         printf("Child PID: %d\n", childPID[i]);
