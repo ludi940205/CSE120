@@ -4,7 +4,9 @@
 
 void exceedMemory() {
 	char str[100000];
-	for (int i = 0; i < 100000; i++)
+	int i;
+	
+	for (i = 0; i < 100000; i++)
 	    str[i] = 'A';
 }
 
