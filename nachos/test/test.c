@@ -122,7 +122,7 @@ void syscallBasicTest() {
     printf("Inside main\n");
 
     for (i = 0; i < 10; i++) {
-        printf("Creating %s\n", name[0][0]);
+        printf("Creating %s\n", name[i][0]);
         childPID[i] = exec("testLoopThread.coff", 1, name[i]);
         printf("Child PID: %d\n", childPID[i]);
     }
