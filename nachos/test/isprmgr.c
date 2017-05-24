@@ -160,7 +160,7 @@ void route(int variation, char dbg_flag)
             printf("++ISPRMGR VAR3: Child process id is %d\n", pid[0]);
             printf("++ISPRMGR VAR3: Issue join to get exit status of chile process\n", pid[0]);
             retval = join(pid[0], &exitstatus);
-            if (retval == 0) {
+            if (retval == 1) {
                 printf("++ISPRMGR VAR3: join successfully, exit status is %d\n", exitstatus);
                 printf("++ISPRMGR VAR3: [ENDED] SUCCESS\n");
             }
@@ -274,7 +274,7 @@ void route(int variation, char dbg_flag)
             printf("++ISPRMGR VAR7: Child process id is %d\n", pid[0]);
             printf("++ISPRMGR VAR7: Issue join to get exit status of chile process\n");
             retval = join(pid[0], &exitstatus);
-            if (retval != 0) {
+            if (retval != 1) {
                 printf("++ISPRMGR VAR7: [ENDED] FAIL\n");
                 break;
             }
@@ -282,7 +282,7 @@ void route(int variation, char dbg_flag)
 
             printf("++ISPRMGR VAR7: Issue join again to get exit status of chile process\n", pid[0]);
             retval = join(pid[0], &exitstatus);
-            if (retval == 0) {
+            if (retval == 1) {
                 printf("++ISPRMGR VAR7: [ENDED] FAILED to join process %d\n", pid[0]);
                 break;
             }

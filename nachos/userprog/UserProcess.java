@@ -509,13 +509,13 @@ public class UserProcess {
 		final int bufferSize = pageSize;
 		byte[] dummyBuffer = new byte[bufferSize];
 
-		int pos = 0;
+		int pos = 0, startPos = fd.getPosition();
 		while (pos < count && (pos < file.length() || fd.getFd() == STDIN)) {
 			int bytesRead;
 			if (fd.getFd() == STDIN)
 				bytesRead = file.read(dummyBuffer, 0, bufferSize);
 			else
-				bytesRead = file.read(pos, dummyBuffer, 0, bufferSize);
+				bytesRead = file.read(startPos + pos, dummyBuffer, 0, bufferSize);
 			if (bytesRead <= 0)
 				return -1;
 
@@ -528,6 +528,8 @@ public class UserProcess {
 			}
 			pos += bytesWrite;
 		}
+		fd.setPosition(startPos + pos);
+
 		return pos;
 	}
 
