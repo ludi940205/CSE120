@@ -4,6 +4,8 @@
 
 void exceedMemory() {
 	char str[100000];
+	for (int i = 0; i < 100000; i++)
+	    str[i] = 'A';
 }
 
 int main(int argc, char const *argv[])
