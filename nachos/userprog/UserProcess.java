@@ -143,6 +143,10 @@ public class UserProcess {
 
 		int vpn = Processor.pageFromAddress(vaddr);
 		int pageOffset = Processor.offsetFromAddress(vaddr);
+
+		if (vpn < 0 || vpn >= numPages)
+			return 0;
+
 		int ppn = pageTable[vpn].ppn;
 		int pAddr = ppn * pageSize + pageOffset;
 
@@ -479,7 +483,7 @@ public class UserProcess {
 		FileDescriptor fd = fdTable.create(fileName);
 		if (fd != null && fd.isValid()) {
 //			UserKernel.fileTable.increFileRefCount(fileName, pID);
-			return fd.getPosition();
+			return fd.getFd();
 		}
 		return -1;
 	}
@@ -489,12 +493,14 @@ public class UserProcess {
 		FileDescriptor fd = fdTable.open(fileName);
 		if (fd != null && fd.isValid()) {
 //			UserKernel.fileTable.increFileRefCount(fileName, pID);
-			return fd.getPosition();
+			return fd.getFd();
 		}
 		return -1;
 	}
 
 	private int handleRead(int fileDescriptor, int bufferVAddr, int count) {
+		if (count < 0)
+			return -1;
 		FileDescriptor fd = fdTable.get(fileDescriptor);
 		if (fd == null || !fd.isValid())
 			return -1;
@@ -504,24 +510,30 @@ public class UserProcess {
 		byte[] dummyBuffer = new byte[bufferSize];
 
 		int pos = 0;
-		while (pos < count && (pos < file.length() || fd.getPosition() == STDIN)) {
-			if (fd.getPosition() == STDIN) {
-				if (file.read(dummyBuffer, 0, bufferSize) == -1)
-					return -1;
-			}
-			else {
-				if (file.read(pos, dummyBuffer, 0, bufferSize) == -1)
-					return -1;
-			}
-			int amount = writeVirtualMemory(bufferVAddr + pos, dummyBuffer, 0, Math.min(bufferSize, count - pos));
-			if (amount == 0)
+		while (pos < count && (pos < file.length() || fd.getFd() == STDIN)) {
+			int bytesRead;
+			if (fd.getFd() == STDIN)
+				bytesRead = file.read(dummyBuffer, 0, bufferSize);
+			else
+				bytesRead = file.read(pos, dummyBuffer, 0, bufferSize);
+			if (bytesRead <= 0)
 				return -1;
-			pos += amount;
+
+			int bytesWrite = 0;
+			while (bytesWrite < bytesRead) {
+				int amount = writeVirtualMemory(bufferVAddr + pos, dummyBuffer, 0, Math.min(bytesRead, count - pos));
+				if (amount == 0)
+					return -1;
+				bytesWrite += amount;
+			}
+			pos += bytesWrite;
 		}
 		return pos;
 	}
 
 	private int handleWrite(int fileDescriptor, int bufferVAddr, int count) {
+		if (count < 0)
+			return -1;
 		FileDescriptor fd = fdTable.get(fileDescriptor);
 		if (fd == null || !fd.isValid())
 			return -1;
@@ -531,13 +543,14 @@ public class UserProcess {
 		byte[] dummyBuffer = new byte[bufferSize];
 
 		int pos = 0;
+		int startPos = fd.getPosition();
 		while(pos < count) {
 			int amount = readVirtualMemory(bufferVAddr + pos, dummyBuffer, 0, Math.min(bufferSize, count - pos));
 			if (amount == 0)
 				return -1;
 
-			if (fd.getPosition() > STDOUT) {
-				if (file.write(pos, dummyBuffer, 0, amount) == -1)
+			if (fd.getFd() > STDOUT) {
+				if (file.write(startPos + pos, dummyBuffer, 0, amount) == -1)
 					return -1;
 			}
 			else {
@@ -547,6 +560,7 @@ public class UserProcess {
 
 			pos += amount;
 		}
+		fd.setPosition(pos + startPos);
 
 		return pos;
 	}
@@ -699,10 +713,10 @@ public class UserProcess {
 			clean();
 		}
 
-		public FileDescriptor(String name, int pos, boolean create) {
-			if (pos == 0)
+		public FileDescriptor(String name, int descriptor, boolean create) {
+			if (descriptor == 0)
 				file = UserKernel.console.openForReading();
-			else if (pos == 1)
+			else if (descriptor == 1)
 				file = UserKernel.console.openForWriting();
 			else
 				file = UserKernel.fileSystem.open(name, create);
@@ -711,19 +725,21 @@ public class UserProcess {
 				clean();
 			else {
 				fileName = name;
-				position = pos;
+				fd = descriptor;
 				valid = true;
+				position = 0;
 			}
 		}
 
 		public void clean() {
 			valid = false;
 			fileName = "";
+			position = 0;
 			if (file != null) {
 				file.close();
 				file = null;
 			}
-			position = -1;
+			fd = -1;
 		}
 
 		public boolean isValid() {
@@ -734,8 +750,19 @@ public class UserProcess {
 			return file;
 		}
 
+		public int getFd() {
+			return fd;
+		}
+
 		public int getPosition() {
+			if (fd == STDIN || fd == STDOUT)
+				return 0;
 			return position;
+		}
+
+		public void setPosition(int pos) {
+			if (fd != STDIN && fd != STDOUT)
+				position = pos;
 		}
 
 		public String getName() {
@@ -744,8 +771,9 @@ public class UserProcess {
 
 		private String fileName;
 		private OpenFile file;
-		private int position;
+		private int fd;
 		private boolean valid;
+		private int position;
 	}
 
 	private class FileDescriptorTable {
@@ -798,10 +826,10 @@ public class UserProcess {
 			return null;
 		}
 
-		public FileDescriptor get(int pos) {
-			if (pos < 0 || pos >= maxFileCount)
+		public FileDescriptor get(int fd) {
+			if (fd < 0 || fd >= maxFileCount)
 				return null;
-			return table[pos];
+			return table[fd];
 		}
 
 		public boolean unlink(String fileName) {
@@ -813,11 +841,11 @@ public class UserProcess {
 			return UserKernel.fileSystem.remove(fileName);
 		}
 
-		public boolean close(int pos) {
-			if (pos < 0 || pos >= maxFileCount)
+		public boolean close(int fd) {
+			if (fd < 0 || fd >= maxFileCount)
 				return false;
-			UserKernel.fileTable.decreFileRefCount(table[pos].getName(), false);
-			table[pos].clean();
+			UserKernel.fileTable.decreFileRefCount(table[fd].getName(), false);
+			table[fd].clean();
 			count--;
 			return true;
 		}
