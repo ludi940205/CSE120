@@ -146,6 +146,8 @@ public class UserProcess {
 
 		if (vpn < 0 || vpn >= numPages)
 			return 0;
+		if (pageOffset < 0 || pageOffset >= pageSize)
+			return -1;
 
 		int ppn = pageTable[vpn].ppn;
 		int pAddr = ppn * pageSize + pageOffset;
@@ -193,6 +195,12 @@ public class UserProcess {
 
 		int vpn = Processor.pageFromAddress(vaddr);
 		int pageOffset = Processor.offsetFromAddress(vaddr);
+
+		if (vpn < 0 || vpn >= numPages)
+			return -1;
+		if (pageOffset < 0 || pageOffset >= pageSize)
+			return -1;
+
 		int ppn = pageTable[vpn].ppn;
 		int pAddr = ppn * pageSize + pageOffset;
 
@@ -482,7 +490,6 @@ public class UserProcess {
 			return -1;
 		FileDescriptor fd = fdTable.create(fileName);
 		if (fd != null && fd.isValid()) {
-//			UserKernel.fileTable.increFileRefCount(fileName, pID);
 			return fd.getFd();
 		}
 		return -1;
@@ -492,7 +499,6 @@ public class UserProcess {
 		String fileName = readVirtualMemoryString(a0, maxStrLen);
 		FileDescriptor fd = fdTable.open(fileName);
 		if (fd != null && fd.isValid()) {
-//			UserKernel.fileTable.increFileRefCount(fileName, pID);
 			return fd.getFd();
 		}
 		return -1;
@@ -551,14 +557,17 @@ public class UserProcess {
 			if (amount == 0)
 				return -1;
 
+			int writeAmount;
 			if (fd.getFd() > STDOUT) {
-				if (file.write(startPos + pos, dummyBuffer, 0, amount) == -1)
-					return -1;
+				writeAmount = file.write(startPos + pos, dummyBuffer, 0, amount);
 			}
-			else {
-				if (file.write(dummyBuffer, 0, amount) == -1)
-					return -1;
+			else if (fd.getFd() == STDOUT) {
+				writeAmount = file.write(dummyBuffer, 0, amount);
 			}
+			else
+				return -1;
+			if (writeAmount != amount)
+				return -1;
 
 			pos += amount;
 		}
@@ -791,7 +800,7 @@ public class UserProcess {
 		}
 
 		public FileDescriptor create(String fileName) {
-			if (isFull())
+			if (isFull() || fileName.equals(""))
 				return null;
 			for (int i = 2; i < maxFileCount; i++) {
 				if (!table[i].isValid()) {
@@ -810,7 +819,7 @@ public class UserProcess {
 		}
 
 		public FileDescriptor open(String fileName) {
-			if (isFull())
+			if (isFull() || fileName.equals(""))
 				return null;
 			for (int i = 2; i < maxFileCount; i++) {
 				if (!table[i].isValid()) {

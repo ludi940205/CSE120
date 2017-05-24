@@ -194,19 +194,13 @@ public class UserKernel extends ThreadedKernel {
 	 *  and a unlink flag. When the unlink flag is set to true, the file is deleted from the
 	 *  file system when the reference count equals 0.
 	 */
-	public class FileTable extends HashMap<String, Integer[]> {
+	public class FileTable extends HashMap<String, Integer> {
 		public FileTable() {
 		}
 
 		public void increFileRefCount(String fileName) {
 			lock.acquire();
-			if (!containsKey(fileName))
-				put(fileName, new Integer[2]);
-			else {
-				Integer[] pair = get(fileName);
-				pair[1]++;
-				put(fileName, pair);
-			}
+			put(fileName, containsKey(fileName) ? get(fileName) + 1 : 1);
 			lock.release();
 		}
 
@@ -216,14 +210,17 @@ public class UserKernel extends ThreadedKernel {
 			try {
 				if (fileName.equals("") || !containsKey(fileName))
 					return -1;
-				refCount = get(fileName)[0];
-				boolean newUnlink = (get(fileName)[1] == 1) | unlink;
-				if (refCount <= 0)
-					return -1;
-				Integer[] pair = new Integer[]{--refCount, newUnlink ? 1 : 0};
-				put(fileName, pair);
-				if (newUnlink && refCount == 0) {
-					ThreadedKernel.fileSystem.remove(fileName);
+				refCount = get(fileName) - 1;
+				Lib.assertTrue(refCount >= 0);
+				put(fileName, refCount);
+				if (unlink)
+					toDelete.add(fileName);
+				if (refCount == 0) {
+					remove(fileName);
+					if (toDelete.contains(fileName)) {
+						ThreadedKernel.fileSystem.remove(fileName);
+						toDelete.remove(fileName);
+					}
 				}
 			}
 			finally {
@@ -234,6 +231,7 @@ public class UserKernel extends ThreadedKernel {
 		}
 
 		private Lock lock = new Lock();
+		private HashSet<String> toDelete = new HashSet<>();
 	}
 
 	public static ProcessTable processTable;
