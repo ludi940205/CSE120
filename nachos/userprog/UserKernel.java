@@ -1,6 +1,5 @@
 package nachos.userprog;
 
-import javafx.util.Pair;
 import nachos.machine.*;
 import nachos.threads.*;
 import nachos.userprog.*;
@@ -195,17 +194,18 @@ public class UserKernel extends ThreadedKernel {
 	 *  and a unlink flag. When the unlink flag is set to true, the file is deleted from the
 	 *  file system when the reference count equals 0.
 	 */
-	public class FileTable extends HashMap<String, Pair<Integer, Boolean>> {
+	public class FileTable extends HashMap<String, Integer[]> {
 		public FileTable() {
 		}
 
 		public void increFileRefCount(String fileName) {
 			lock.acquire();
 			if (!containsKey(fileName))
-				put(fileName, new Pair<>(0, false));
+				put(fileName, new Integer[2]);
 			else {
-				Pair<Integer, Boolean> pair = get(fileName);
-				put(fileName, new Pair<>(pair.getKey() + 1, pair.getValue()));
+				Integer[] pair = get(fileName);
+				pair[1]++;
+				put(fileName, pair);
 			}
 			lock.release();
 		}
@@ -216,11 +216,12 @@ public class UserKernel extends ThreadedKernel {
 			try {
 				if (fileName.equals("") || !containsKey(fileName))
 					return -1;
-				refCount = get(fileName).getKey();
-				boolean newUnlink = get(fileName).getValue() | unlink;
+				refCount = get(fileName)[0];
+				boolean newUnlink = (get(fileName)[1] == 1) | unlink;
 				if (refCount <= 0)
 					return -1;
-				put(fileName, new Pair<>(--refCount, newUnlink));
+				Integer[] pair = new Integer[]{--refCount, newUnlink ? 1 : 0};
+				put(fileName, pair);
 				if (newUnlink && refCount == 0) {
 					ThreadedKernel.fileSystem.remove(fileName);
 				}
