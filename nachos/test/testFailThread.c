@@ -3,11 +3,13 @@
 #include "stdlib.h"
 
 void exceedMemory() {
-	char str[100000];
-	int i;
+	char str[20000];
 
-	for (i = 0; i < 100000; i++)
-	    str[i] = 'A';
+	str[0] = '1';
+//	int i;
+//
+//	for (i = 0; i < 20000; i++)
+//	    str[i] = 'A';
 }
 
 int main(int argc, char const *argv[])
