@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
 
     for (i = 0; i < 9; i++) {
         fd[i] = open(fileName);
-        assertMsg(fd[i] == -1, "Not open\n");
+        assertMsg(fd[i] != -1, "Not open\n");
     }
 
     for (i = 0; i < 3; i++) {
