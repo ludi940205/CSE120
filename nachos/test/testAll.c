@@ -263,25 +263,25 @@ void testFileSystemPressure() {
 void testRoute(int id) {
     switch (id) {
         case 0:
-            testExit();
+            testFileSystemPressure();
             break;
         case 1:
-            testPID();
-            break;
-        case 2:
-            testJoin();
-            break;
-        case 3:
-            testExec();
-            break;
-        case 4:
-            testUnlink();
-            break;
-        case 5:
             testFileSystemFail();
             break;
+        case 2:
+            testExit();
+            break;
+        case 3:
+            testPID();
+            break;
+        case 4:
+            testJoin();
+            break;
+        case 5:
+            testExec();
+            break;
         case 6:
-            testFileSystemPressure();
+            testUnlink();
             break;
     }
 }
