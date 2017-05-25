@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
     }
 
     assertMsg(unlink(fileName) == 0, "Unable to unlink\n");
-    assertMsg(tryOpen(fileName), "Can still open after unlink\n");
+    assertMsg(tryOpen(fileName) == 0, "Can still open after unlink\n");
 
     assertMsg(unlink(fileName) == 0, "Failed when issue unlink twice before actually deteting\n");
     printf("passed\n");
