@@ -147,15 +147,15 @@ public class UserProcess {
 			int pageOffset = Processor.offsetFromAddress(vaddr);
 
 			if (vpn < 0 || vpn >= numPages)
-				return 0;
+				return totalAmount;
 			if (pageOffset < 0 || pageOffset >= pageSize)
-				return -1;
+				return totalAmount;
 
 			int ppn = pageTable[vpn].ppn;
 			int pAddr = ppn * pageSize + pageOffset;
 
 			if (pAddr < 0 || pAddr >= memory.length)
-				return 0;
+				return totalAmount;
 
 			int amount = Math.min(length - totalAmount, pageSize - pageOffset);
 			System.arraycopy(memory, pAddr, data, offset + totalAmount, amount);
@@ -207,18 +207,18 @@ public class UserProcess {
 			int pageOffset = Processor.offsetFromAddress(vaddr);
 
 			if (vpn < 0 || vpn >= numPages)
-				return -1;
+				return totalAmount;
 			if (pageOffset < 0 || pageOffset >= pageSize)
-				return -1;
+				return totalAmount;
 
 			int ppn = pageTable[vpn].ppn;
 			int pAddr = ppn * pageSize + pageOffset;
 
 			// for now, just assume that virtual addresses equal physical addresses
 			if (pAddr < 0 || pAddr >= memory.length)
-				return 0;
+				return totalAmount;
 			if (pageTable[vpn].readOnly)
-				return 0;
+				return totalAmount;
 
 			int amount = Math.min(length - totalAmount, pageSize - pageOffset);
 			System.arraycopy(data, offset + totalAmount, memory, pAddr, amount);
