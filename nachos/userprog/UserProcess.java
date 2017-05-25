@@ -516,28 +516,31 @@ public class UserProcess {
 		byte[] dummyBuffer = new byte[bufferSize];
 
 		int pos = 0, startPos = fd.getPosition();
-		boolean breaking = false;
-		while (!breaking && pos < count && (pos < file.length() || fd.getFd() == STDIN)) {
-			int bytesRead;
-			if (fd.getFd() == STDIN)
-				bytesRead = file.read(dummyBuffer, 0, bufferSize);
-			else
-				bytesRead = file.read(startPos + pos, dummyBuffer, 0, bufferSize);
-			if (bytesRead <= 0)
-				return -1;
+		try {
+			while (pos < count) {
+				int bytesRead;
+				if (fd.getFd() == STDIN)
+					bytesRead = file.read(dummyBuffer, 0, bufferSize);
+				else
+					bytesRead = file.read(startPos + pos, dummyBuffer, 0, bufferSize);
+				if (bytesRead <= 0)
+					return pos;
 
-			int bytesWrite = 0;
-			while (bytesWrite < bytesRead) {
-				int amount = writeVirtualMemory(bufferVAddr + pos, dummyBuffer, 0, Math.min(bytesRead, count - pos));
-				if (amount == 0) {
-					breaking = true;
-					break;
+				int bytesWrite = 0;
+				while (bytesWrite < bytesRead) {
+					int amount = writeVirtualMemory(bufferVAddr + pos, dummyBuffer, 0, Math.min(bytesRead, count - pos));
+					if (amount == 0) {
+						pos += bytesWrite;
+						return pos;
+					}
+					bytesWrite += amount;
 				}
-				bytesWrite += amount;
+				pos += bytesWrite;
 			}
-			pos += bytesWrite;
 		}
-		fd.setPosition(startPos + pos);
+		finally {
+			fd.setPosition(startPos + pos);
+		}
 
 		return pos;
 	}
@@ -853,12 +856,11 @@ public class UserProcess {
 		}
 
 		public boolean unlink(String fileName) {
-			for (int i = 2; i < maxFileCount; i++) {
-				if (table[i].getName().equals(fileName)) {
-					UserKernel.fileTable.decreFileRefCount(fileName, true);
-				}
-			}
-			return UserKernel.fileSystem.remove(fileName);
+			FileDescriptor fd = open(fileName);
+			if (fd == null)
+				return false;
+			UserKernel.fileTable.decreFileRefCount(fileName, true);
+			return true;
 		}
 
 		public boolean close(int fd) {
