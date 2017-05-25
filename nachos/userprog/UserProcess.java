@@ -141,24 +141,32 @@ public class UserProcess {
 
 		byte[] memory = Machine.processor().getMemory();
 
-		int vpn = Processor.pageFromAddress(vaddr);
-		int pageOffset = Processor.offsetFromAddress(vaddr);
+		int totalAmount = 0;
+		while (true) {
+			int vpn = Processor.pageFromAddress(vaddr);
+			int pageOffset = Processor.offsetFromAddress(vaddr);
 
-		if (vpn < 0 || vpn >= numPages)
-			return 0;
-		if (pageOffset < 0 || pageOffset >= pageSize)
-			return -1;
+			if (vpn < 0 || vpn >= numPages)
+				return 0;
+			if (pageOffset < 0 || pageOffset >= pageSize)
+				return -1;
 
-		int ppn = pageTable[vpn].ppn;
-		int pAddr = ppn * pageSize + pageOffset;
+			int ppn = pageTable[vpn].ppn;
+			int pAddr = ppn * pageSize + pageOffset;
 
-		if (pAddr < 0 || pAddr >= memory.length)
-			return 0;
+			if (pAddr < 0 || pAddr >= memory.length)
+				return 0;
 
-		int amount = Math.min(length, pageSize - pageOffset);
-		System.arraycopy(memory, pAddr, data, offset, amount);
+			int amount = Math.min(length - totalAmount, pageSize - pageOffset);
+			System.arraycopy(memory, pAddr, data, offset + totalAmount, amount);
+			totalAmount += amount;
 
-		return amount;
+			if (totalAmount == length)
+				break;
+			vaddr += amount;
+		}
+
+		return totalAmount;
 	}
 
 	/**
@@ -193,27 +201,35 @@ public class UserProcess {
 
 		byte[] memory = Machine.processor().getMemory();
 
-		int vpn = Processor.pageFromAddress(vaddr);
-		int pageOffset = Processor.offsetFromAddress(vaddr);
+		int totalAmount = 0;
+		while (true) {
+			int vpn = Processor.pageFromAddress(vaddr);
+			int pageOffset = Processor.offsetFromAddress(vaddr);
 
-		if (vpn < 0 || vpn >= numPages)
-			return -1;
-		if (pageOffset < 0 || pageOffset >= pageSize)
-			return -1;
+			if (vpn < 0 || vpn >= numPages)
+				return -1;
+			if (pageOffset < 0 || pageOffset >= pageSize)
+				return -1;
 
-		int ppn = pageTable[vpn].ppn;
-		int pAddr = ppn * pageSize + pageOffset;
+			int ppn = pageTable[vpn].ppn;
+			int pAddr = ppn * pageSize + pageOffset;
 
-		// for now, just assume that virtual addresses equal physical addresses
-		if (pAddr < 0 || pAddr >= memory.length)
-			return 0;
-		if (pageTable[vpn].readOnly)
-			return 0;
+			// for now, just assume that virtual addresses equal physical addresses
+			if (pAddr < 0 || pAddr >= memory.length)
+				return 0;
+			if (pageTable[vpn].readOnly)
+				return 0;
 
-		int amount = Math.min(length, pageSize - offset);
-		System.arraycopy(data, offset, memory, pAddr, amount);
+			int amount = Math.min(length - totalAmount, pageSize - pageOffset);
+			System.arraycopy(data, offset + totalAmount, memory, pAddr, amount);
+			totalAmount += amount;
 
-		return amount;
+			if (totalAmount == length)
+				break;
+			vaddr += amount;
+		}
+
+		return totalAmount;
 	}
 
 	/**

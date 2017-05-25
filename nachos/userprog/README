@@ -1,0 +1,39 @@
+%% MEMBER
+Di Lu, Xingyu Gu
+
+%% CODE DESCRIPTION
+% Part. 1: system call for file system
+
+Two classes are established in UserProcess.java: FileDescriptor and FileDescriptorTable. FileDescriptor contains the information of one single file, including the integer of file descriptor, the file name, the ground truth file object, current read/write position of the file, etc. The FileDescriptorTable class keep track of all the files of a user process. File creating, opening, closing and unlinking are done in side this class.
+
+Regrading unlink, a file table is established in UserKernel class, which keeps track of the reference count of each file opened. When a process tries to unlink a file, the file is added to a hash set, which records all the files to be unlinked. After that, all the open/create call to this file would be declined. When the reference count of a file becomes 0, the file is removed from the file system.
+
+For read and write, the process first retrieve current read/write position of the file. Then the writeVirtualMemory/readVirtualMemory and openfile.read/write is called to transfer between system memory and the file. Upon large file, the total amount written to/read from the file is recorded to determine when to exit.
+
+% Part. 2: multiprogramming
+
+A PageTable class is established in UserKernel to keep track of the free pages. Upon creating a process, the pages are allocated from the page table, and upon exiting a process, the pages are reallocated by the page table. With the physical pages allocated, we can create a per process page table that translate virtual page to physical page, the translation entry are set at the creating time.
+
+% Part. 3: system call exit, exec, join
+
+When each process is created, a PID is set according to a global counter. To established the relation between PID and the process object, we create a ProcessTable class under UserKernel. A user process is added to the table upon creation. 
+
+When exec is called, if the attempt of executing the child process is failed, then the child process is removed from the process table. Otherwise, the PID of the child is added to the parent, and the PID of the parent is assigned to the child process.
+
+A hash map is built for each process which keeps track of the exit status of its children. Upon join, the parent sleeps on a condition variable until the child calls exit and calls wake. The exit status is then recorded into the parent's table.
+
+%% CODE TEST DESCRIPTION
+
+We have tested the following cases:
+1. syscall exit finishes the thread of the process immediately
+2. each process gets unique PID
+3. exec with error arguments (bad file name, unmatched argc)
+4. join to child/non-child, join twice, etc.
+5. return value of join with success/unsuccess child
+6. unlink remove file after all file closed
+7. read write large files
+8. read write multiple times
+9. all the provided implementations (sh.coff, rm.coff, cp.coff, etc.)
+10. other basic tests
+
+Works well for these test cases.

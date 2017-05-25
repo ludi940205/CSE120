@@ -94,7 +94,7 @@ void fileSystemPressureTest() {
 }
 
 void fileSystemFailTest() {
-	char buffer[20000];
+	char buffer[5000];
     int file, newFile;
     int length;
     int i;
@@ -115,7 +115,7 @@ void fileSystemFailTest() {
     if (newFile == -1)
         printf("file does not exist\n");
 
-    length = read(newFile, buffer, 20000);
+    length = read(newFile, buffer, 5000);
     if (length == -1)
         printf("read failed\n");
     else
