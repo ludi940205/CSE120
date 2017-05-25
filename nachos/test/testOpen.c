@@ -6,7 +6,7 @@ int main(int argc, char* argv[]) {
 
     if(argc != 2)
         exit(-1);
-    fname = argv[1]
+    fname = argv[1];
 
     // printf ("opening %s...\n", fname);
     fd = open (fname);
