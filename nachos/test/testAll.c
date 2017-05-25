@@ -131,7 +131,7 @@ void testJoin() {
         pid = exec(executable, argc, argv);
         assertMsg(pid > 1, "JOIN TEST: unable to exec testException.coff\n");
         joinRet = join(pid, &exitstatus);
-        assertMsg(joinRet == 1, "JOIN TEST: Join a failed thread, return value not right\n");
+        assertMsg(joinRet == 0, "JOIN TEST: Join a failed thread, return value not right\n");
         assertMsg(exitstatus != 0, "JOIN TEST: Join a failed thread, exit status not right\n");
     }
 
