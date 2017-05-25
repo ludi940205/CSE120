@@ -88,7 +88,7 @@ void testPID() {
         assertMsg(pid[i] != -1, "PID TEST: Unable to exec cp.coff\n");
     
         for (j = 0; j < i; ++j)
-            assertMsg(pid[j] != -1 && pid[j] == pid[i], "PID TEST: pid equals");
+            assertMsg(pid[j] == -1 || pid[j] != pid[i], "PID TEST: pid equals");
     }
 
     printf("PID TEST SUCCESS\n");
@@ -155,6 +155,8 @@ void testExec() {
     argc = 100; 
     pid = exec(executable, argc, argv);
     assertMsg(pid == -1, "EXEC TEST: invoke exec with unmatched argc success\n");
+
+    printf("EXEC TEST SUCCESS\n");
 }
 
 void testUnlink() {
@@ -179,7 +181,7 @@ void testUnlink() {
     assertMsg(tryOpen(fileName) == 0, "UNLINK TEST: Can still open after unlink\n");
 
     assertMsg(unlink(fileName) == -1, "UNLINK TEST: Failed when issue unlink twice before actually deteting\n");
-    printf("passed\n");
+    printf("UNLINK TEST SUCCESS\n");
 }
 
 void testFileSystemFail() {
@@ -197,6 +199,8 @@ void testFileSystemFail() {
 
     i = close(file);
     assertMsg(i == -1, "FILE SYSTEM FAIL TEST: close should fail\n");
+
+    printf("FILE SYSTEM FAIL TEST SUCCESS\n");
 }
 
 void testFileSystemPressure() {
@@ -248,6 +252,8 @@ void testFileSystemPressure() {
         flag = close(files[i]);
         assertMsg(flag == 0, "FILE SYSTEM PRESSURE TEST: unable to close\n");
     }
+
+    printf("FILE SYSTEM PRESSURE TEST SUCCESS\n");
 }
 
 void testRoute(int id) {
