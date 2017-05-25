@@ -211,12 +211,13 @@ public class UserKernel extends ThreadedKernel {
 			return ret;
 		}
 
-		public int decreFileRefCount(String fileName, boolean unlink) {
+		public boolean decreFileRefCount(String fileName, boolean unlink) {
 			lock.acquire();
 			int refCount;
+			boolean ret = true;
 			try {
 				if (fileName.equals("") || !containsKey(fileName))
-					return -1;
+					return false;
 				refCount = get(fileName) - 1;
 				Lib.assertTrue(refCount >= 0);
 				put(fileName, refCount);
@@ -225,7 +226,7 @@ public class UserKernel extends ThreadedKernel {
 				if (refCount == 0) {
 					remove(fileName);
 					if (toDelete.contains(fileName)) {
-						ThreadedKernel.fileSystem.remove(fileName);
+						ret = ThreadedKernel.fileSystem.remove(fileName);
 						toDelete.remove(fileName);
 					}
 				}
@@ -234,7 +235,7 @@ public class UserKernel extends ThreadedKernel {
 				lock.release();
 			}
 
-			return refCount;
+			return ret;
 		}
 
 		private Lock lock = new Lock();

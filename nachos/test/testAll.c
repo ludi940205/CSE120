@@ -181,7 +181,7 @@ void testUnlink() {
     assertMsg(unlink(fileName) == 0, "UNLINK TEST: Unable to unlink\n");
     assertMsg(tryOpen(fileName) == 0, "UNLINK TEST: Can still open after unlink\n");
 
-    assertMsg(unlink(fileName) == -1, "UNLINK TEST: Failed when issue unlink twice before actually deteting\n");
+    assertMsg(unlink(fileName) == 0, "UNLINK TEST: Failed when issue unlink twice before actually deteting\n");
 
     for (i = 0; i < 9; i++)
         close(fd[i]);

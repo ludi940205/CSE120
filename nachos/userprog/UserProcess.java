@@ -872,11 +872,8 @@ public class UserProcess {
 		}
 
 		public boolean unlink(String fileName) {
-			FileDescriptor fd = open(fileName);
-			if (fd == null)
-				return false;
-			UserKernel.fileTable.decreFileRefCount(fileName, true);
-			return true;
+			UserKernel.fileTable.increFileRefCount(fileName);
+			return UserKernel.fileTable.decreFileRefCount(fileName, true);
 		}
 
 		public boolean close(int fd) {
