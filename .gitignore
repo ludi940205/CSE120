@@ -19,4 +19,6 @@ hs_err_pid*
 CSE120.iml
 out/
 *.txt
+*.out
+MEMBERS
 mips-x86.linux-xgcc/
