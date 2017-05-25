@@ -16,19 +16,18 @@ int main(int argc, char const *argv[])
 {
 	int i = 0, a = 5, b = 0, c;
 	char* ch;
-	if (argc != 1)
+	if (argc != 2)
 		exit(2);
-	i = argv[0][0] - '0';
-	printf("%d\n", i);
+	i = argv[1][0] - '0';
 
 	switch (i) {
 		case 0:
 			c = a / b;
-			printf("%d / %d = %d\n", a, b, c);
+			assert(0);
 			break;
 		case 1:
 			ch[0] = 'a';
-			printf("Segmentation fault\n");
+			assert(0);
 			break;
 		case 2:
 			exceedMemory();
