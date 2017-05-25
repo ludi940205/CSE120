@@ -54,20 +54,25 @@ int forkOpen(char* fileName) {
 void testRoute(int id) {
     switch (id) {
         case 0:
-            /* exception test */
-            exceptionTest();
+            testExit();
             break;
         case 1:
-            fileSystemBasicTest();
+            testPID();
             break;
         case 2:
-            fileSystemPressureTest();
+            testJoin();
             break;
         case 3:
-            fileSystemFailTest();
+            testExec();
             break;
         case 4:
-            syscallBasicTest();
+            testUnlink();
+            break;
+        case 5:
+            testFileSystemFail();
+            break;
+        case 6:
+            testFileSystemPressure();
             break;
     }
 }
@@ -88,7 +93,7 @@ void testExit() {
     argv[0] = executable;
     argv[1] = NULL;
     argc = 1;
-    pid[0] = exec(executable, argc, argv);
+    pid = exec(executable, argc, argv);
     assertMsg(pid != -1, "EXIT TEST: Unable to exec exittest.coff\n");
     printf("EXIT TEST SUCCESS\n");
 }
@@ -127,11 +132,11 @@ void testJoin() {
 
     pid = exec(executable, argc, argv);
     assertMsg(pid > 1, "JOIN TEST: unable to exec exittest.coff\n");
-    joinRet = join(pid[0], &exitstatus);
+    joinRet = join(pid, &exitstatus);
     assertMsg(joinRet == 1, "JOIN TEST: Join return value not right\n");
     assertMsg(exitstatus == 0, "JOIN TEST: exit status not right\n");
     
-    joinRet = join(pid[0], &exitstatus);
+    joinRet = join(pid, &exitstatus);
     assertMsg(joinRet == 1, "JOIN TEST: Join twice return value not right\n");
     assertMsg(exitstatus == 0, "JOIN TEST: join twice exit status not right\n");
 
@@ -148,9 +153,9 @@ void testJoin() {
 
     for (i = 0; i < 3; i++) {
         argv = '0' + i;
-        pid[0] = exec(executable, argc, argv);
+        pid = exec(executable, argc, argv);
         assertMsg(pid > 1, "JOIN TEST: unable to exec testException.coff\n");
-        joinRet = join(pid[0], &exitstatus);
+        joinRet = join(pid, &exitstatus);
         assertMsg(joinRet == 1, "JOIN TEST: Join a failed thread, return value not right\n");
         assertMsg(exitstatus != 0, "JOIN TEST: Join a failed thread, exit status not right\n");
     }
@@ -204,9 +209,8 @@ void testUnlink() {
 }
 
 void testFileSystemFail() {
-    int file, newFile;
-    int length;
-    int i;
+    char buffer[100];
+    int file, length, i;
 
     file = open("not_existed_file");
     assertMsg(file == -1, "FILE SYSTEM FAIL TEST: file should not exist\n");
@@ -274,5 +278,7 @@ void testFileSystemPressure() {
 
 
 int main(int argc, char* argv[]) {
-	
+    int i;
+	for (i = 0; i < 7; i++)
+        testRoute(i);
 }
