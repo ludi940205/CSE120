@@ -51,32 +51,6 @@ int forkOpen(char* fileName) {
     return pid;
 }
 
-void testRoute(int id) {
-    switch (id) {
-        case 0:
-            testExit();
-            break;
-        case 1:
-            testPID();
-            break;
-        case 2:
-            testJoin();
-            break;
-        case 3:
-            testExec();
-            break;
-        case 4:
-            testUnlink();
-            break;
-        case 5:
-            testFileSystemFail();
-            break;
-        case 6:
-            testFileSystemPressure();
-            break;
-    }
-}
-
 void testExit() {
     char* executable;
     char* argv[2];
@@ -276,6 +250,31 @@ void testFileSystemPressure() {
     }
 }
 
+void testRoute(int id) {
+    switch (id) {
+        case 0:
+            testExit();
+            break;
+        case 1:
+            testPID();
+            break;
+        case 2:
+            testJoin();
+            break;
+        case 3:
+            testExec();
+            break;
+        case 4:
+            testUnlink();
+            break;
+        case 5:
+            testFileSystemFail();
+            break;
+        case 6:
+            testFileSystemPressure();
+            break;
+    }
+}
 
 int main(int argc, char* argv[]) {
     int i;
