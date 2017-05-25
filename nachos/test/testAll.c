@@ -75,7 +75,7 @@ void testExit() {
 void testPID() {
     char* executable;
     char* argv[3];
-    int pid[MAXPROCESS], argc, i, j;
+    int pid[MAXPROCESS], argc, i, j, exitstatus;
 
     executable = "cp.coff";
     argv[0] = executable;
@@ -85,6 +85,7 @@ void testPID() {
 
     for (i = 0; i <  MAXPROCESS; i++) {
         pid[i] = exec(executable, argc, argv);
+        Join(pid[i], &exitstatus);
         assertMsg(pid[i] != -1, "PID TEST: Unable to exec cp.coff\n");
     
         for (j = 0; j < i; ++j)
