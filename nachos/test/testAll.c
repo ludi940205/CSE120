@@ -85,7 +85,7 @@ void testPID() {
 
     for (i = 0; i <  MAXPROCESS; i++) {
         pid[i] = exec(executable, argc, argv);
-        assertMsg(pid != -1, "PID TEST: Unable to exec cp.coff\n");
+        assertMsg(pid[i] != -1, "PID TEST: Unable to exec cp.coff\n");
     
         for (j = 0; j < i; ++j)
             assertMsg(pid[j] != -1 && pid[j] == pid[i], "PID TEST: pid equals");
@@ -126,7 +126,7 @@ void testJoin() {
     argc = 1; 
 
     for (i = 0; i < 3; i++) {
-        argv = '0' + i;
+        argv[1] = '0' + i;
         pid = exec(executable, argc, argv);
         assertMsg(pid > 1, "JOIN TEST: unable to exec testException.coff\n");
         joinRet = join(pid, &exitstatus);
