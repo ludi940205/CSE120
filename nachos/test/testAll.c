@@ -1,5 +1,8 @@
 #include "stdio.h"
 
+#define NULL        0
+#define MAXPROCESS  9
+
 void assertMsg(int arg, char* msg) {
     if (arg == 0) {
         printf("%s\n", msg);
@@ -19,31 +22,31 @@ int tryOpen(char* fileName) {
 }
 
 int forkCreat(char* fileName) {
-    char* excutable;
+    char* executable;
     char* argv[2];
     int pid, argc;
 
-    excutable = "testCreat.coff";
+    executable = "testCreat.coff";
     argc = 2;
-    argv[0] = excutable;
+    argv[0] = executable;
     argv[1] = fileName;
 
-    pid = exec(excutable, argc, argv);
+    pid = exec(executable, argc, argv);
 
     return pid;
 }
 
 int forkOpen(char* fileName) {
-    char* excutable;
+    char* executable;
     char* argv[2];
     int pid, argc;
 
-    excutable = "testOpen.coff";
+    executable = "testOpen.coff";
     argc = 2;
-    argv[0] = excutable;
+    argv[0] = executable;
     argv[1] = fileName;
 
-    pid = exec(excutable, argc, argv);
+    pid = exec(executable, argc, argv);
 
     return pid;
 }
@@ -70,7 +73,7 @@ void testRoute(int id) {
 }
 
 void testExit() {
-    char* excutable;
+    char* executable;
     char* argv[2];
     int pid, argc;
 
@@ -91,9 +94,9 @@ void testExit() {
 }
 
 void testPID() {
-    char* excutable;
+    char* executable;
     char* argv[3];
-    int pid[MAXPROCESS], argc;
+    int pid[MAXPROCESS], argc, i, j;
 
     executable = "cp.coff";
     argv[0] = executable;
@@ -113,7 +116,7 @@ void testPID() {
 }
 
 void testJoin() {
-    char* excutable;
+    char* executable;
     char* argv[2];
     int pid, argc, exitstatus, joinRet, i;
 
@@ -156,7 +159,7 @@ void testJoin() {
 }
 
 void testExec() {
-    char* excutable;
+    char* executable;
     char* argv[2];
     int pid, argc;
 
