@@ -198,10 +198,17 @@ public class UserKernel extends ThreadedKernel {
 		public FileTable() {
 		}
 
-		public void increFileRefCount(String fileName) {
+		public boolean increFileRefCount(String fileName) {
+			boolean ret;
 			lock.acquire();
-			put(fileName, containsKey(fileName) ? get(fileName) + 1 : 1);
+			if (toDelete.contains(fileName))
+				ret = false;
+			else {
+				put(fileName, containsKey(fileName) ? get(fileName) + 1 : 1);
+				ret = true;
+			}
 			lock.release();
+			return ret;
 		}
 
 		public int decreFileRefCount(String fileName, boolean unlink) {

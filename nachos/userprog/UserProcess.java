@@ -565,7 +565,9 @@ public class UserProcess {
 				if (fd.getFd() > STDOUT) {
 					writeAmount = file.write(startPos + pos, dummyBuffer, 0, amount);
 				} else if (fd.getFd() == STDOUT) {
+					stdoutLock.acquire();
 					writeAmount = file.write(dummyBuffer, 0, amount);
+					stdoutLock.release();
 				} else
 					return -1;
 				if (writeAmount != amount)
@@ -811,9 +813,10 @@ public class UserProcess {
 				if (!table[i].isValid()) {
 					FileDescriptor fd = new FileDescriptor(fileName, i, true);
 					if (fd.isValid()) {
+						if (!UserKernel.fileTable.increFileRefCount(fileName))
+							return null;
 						table[i] = fd;
 						count++;
-						UserKernel.fileTable.increFileRefCount(fileName);
 						return table[i];
 					}
 					else
@@ -830,9 +833,10 @@ public class UserProcess {
 				if (!table[i].isValid()) {
 					FileDescriptor fd = new FileDescriptor(fileName, i, false);
 					if (fd.isValid()) {
+						if (!UserKernel.fileTable.increFileRefCount(fileName))
+							return null;
 						table[i] = fd;
 						count++;
-						UserKernel.fileTable.increFileRefCount(fileName);
 						return table[i];
 					}
 					else
@@ -907,6 +911,8 @@ public class UserProcess {
 	private Lock joinLock = new Lock();
 
 	private Condition joinCondition = new Condition(joinLock);
+
+	private static Lock stdoutLock = new Lock();
 
 	private static Lock pIDLock = new Lock();
 
