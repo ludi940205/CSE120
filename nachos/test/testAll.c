@@ -182,6 +182,9 @@ void testUnlink() {
     assertMsg(tryOpen(fileName) == 0, "UNLINK TEST: Can still open after unlink\n");
 
     assertMsg(unlink(fileName) == -1, "UNLINK TEST: Failed when issue unlink twice before actually deteting\n");
+
+    for (i = 0; i < 9; i++)
+        close(fd[i]);
     printf("UNLINK TEST SUCCESS\n");
 }
 
