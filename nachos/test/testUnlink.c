@@ -28,7 +28,7 @@ int forkCreat(char* fileName) {
     argv[0] = excutable;
     argv[1] = fileName;
 
-    pid = exec(excutable, narg, argc);
+    pid = exec(excutable, argc, argv);
 
     return pid;
 }
@@ -43,7 +43,7 @@ int forkOpen(char* fileName) {
     argv[0] = excutable;
     argv[1] = fileName;
 
-    pid = exec(excutable, narg, argc);
+    pid = exec(excutable, argc, argv);
 
     return pid;
 }
