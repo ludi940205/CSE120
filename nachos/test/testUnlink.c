@@ -50,10 +50,11 @@ int forkOpen(char* fileName) {
 
 int main(int argc, char* argv[]) {
 	char* fileName = "testUnlink.txt";
-    int pid, fd[10], i;
+    int pid, fd[10], i, *status;
 
     pid = forkCreat(fileName);
     assertMsg(pid != -1, "Not create\n");
+    assertMsg(join(pid, status) == 1, "Not join\n");
 
     for (i = 0; i < 9; i++) {
         fd[i] = open(fileName);
