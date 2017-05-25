@@ -16,5 +16,5 @@ int main(int argc, char* argv[]) {
 		// printf ("...failed (%d)\n", fd);
 		exit (-1001);
     }
-    return fd;
+    return 0;
 }
