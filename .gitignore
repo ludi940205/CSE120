@@ -22,3 +22,5 @@ out/
 *.out
 MEMBERS
 mips-x86.linux-xgcc/
+
+nachos/MEMBERS
