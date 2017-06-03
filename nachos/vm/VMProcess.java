@@ -22,6 +22,11 @@ public class VMProcess extends UserProcess {
 	 */
 	public void saveState() {
 		super.saveState();
+		for (int i = 0; i < Machine.processor().getTLBSize(); i++) {
+			TranslationEntry tlbEntry = Machine.processor().readTLBEntry(i);
+			tlbEntry.valid = false;
+			Machine.processor().writeTLBEntry(i, tlbEntry);
+		}
 	}
 
 	/**
@@ -29,7 +34,7 @@ public class VMProcess extends UserProcess {
 	 * <tt>UThread.restoreState()</tt>.
 	 */
 	public void restoreState() {
-		super.restoreState();
+
 	}
 
 	/**
@@ -49,6 +54,24 @@ public class VMProcess extends UserProcess {
 		super.unloadSections();
 	}
 
+	private void handleTLBMiss(int vAddr) {
+		Processor processor = Machine.processor();
+		int tlbSize = processor.getTLBSize();
+		int insertPos = -1;
+		for (int i = 0; i < tlbSize; i++) {
+			TranslationEntry tlbEntry = processor.readTLBEntry(i);
+			if (!tlbEntry.valid) {
+				insertPos = i;
+				break;
+			}
+		}
+		if (insertPos == -1) {
+			insertPos = Lib.random(tlbSize);
+		}
+
+		int vpn = Processor.pageFromAddress(vAddr);
+	}
+
 	/**
 	 * Handle a user exception. Called by <tt>UserKernel.exceptionHandler()</tt>
 	 * . The <i>cause</i> argument identifies which exception occurred; see the
@@ -60,8 +83,9 @@ public class VMProcess extends UserProcess {
 		Processor processor = Machine.processor();
 
 		switch (cause) {
+			case Processor.exceptionTLBMiss:
+				handleTLBMiss(processor.readRegister(Processor.regBadVAddr));
 		default:
-			super.handleException(cause);
 			break;
 		}
 	}
