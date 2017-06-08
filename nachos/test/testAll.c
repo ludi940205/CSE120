@@ -124,7 +124,7 @@ void testJoin() {
     executable = "testException.coff";
     argv[0] = executable;
     argv[1] = NULL;
-    argc = 1; 
+    argc = 2;
 
     for (i = 0; i < 3; i++) {
         argv[1] = '0' + i;
