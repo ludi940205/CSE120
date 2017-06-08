@@ -22,10 +22,12 @@ int main(int argc, char const *argv[])
 
 	switch (i) {
 		case 0:
+		    printf("c=a/b");
 			c = a / b;
 			assert(0);
 			break;
 		case 1:
+		    printf("segmentation fault");
 			ch[0] = 'a';
 			assert(0);
 			break;
