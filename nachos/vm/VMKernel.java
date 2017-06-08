@@ -24,8 +24,7 @@ public class VMKernel extends UserKernel {
 	 */
 	public void initialize(String[] args) {
 		super.initialize(args);
-		swapFile = ThreadedKernel.fileSystem.open(swapFileName, true);
-		globalPageTable = new PageTable();
+		globalPageTable = new GlobalPageTable();
 	}
 
 	/**
@@ -46,19 +45,7 @@ public class VMKernel extends UserKernel {
 	 * Terminate this kernel. Never returns.
 	 */
 	public void terminate() {
-		swapFile.close();
-		ThreadedKernel.fileSystem.remove(swapFileName);
 		super.terminate();
-	}
-
-	class PageTable extends HashMap<Integer[], TranslationEntry> {
-		boolean insertPage(Integer[] pidAndVpn, TranslationEntry entry) {
-			lock.acquire();
-			put(pidAndVpn, entry);
-			lock.release();
-			return true;
-		}
-		private Lock lock;
 	}
 
 	// dummy variables to make javac smarter
@@ -69,5 +56,5 @@ public class VMKernel extends UserKernel {
 	private static String swapFileName = "swap";
 	private static OpenFile swapFile;
 
-	static PageTable globalPageTable;
+	static GlobalPageTable globalPageTable;
 }

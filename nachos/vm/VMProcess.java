@@ -53,6 +53,43 @@ public class VMProcess extends UserProcess {
 		super.unloadSections();
 	}
 
+	@Override
+	protected int pinVirtualPage(int vpn, boolean isUserWrite) {
+		if (vpn < 0 || vpn >= pageTable.length)
+			return -1;
+
+		Pair pair = new Pair(processID(), vpn);
+		TranslationEntry entry = VMKernel.globalPageTable.getPage(pair);
+		VMKernel.globalPageTable.pinPage(pair);
+		if (!entry.valid || entry.vpn != vpn)
+			return -1;
+
+		if (isUserWrite) {
+			if (entry.readOnly)
+				return -1;
+			entry.dirty = true;
+		}
+
+		entry.used = true;
+
+		return entry.ppn;
+	}
+
+	@Override
+	protected void unpinVirtualPage(int vpn) {
+		VMKernel.globalPageTable.unpinPage(new Pair(processID(), vpn));
+	}
+
+	private void synchronizeTLB() {
+		Processor processor = Machine.processor();
+		for (int i = 0; i < processor.getTLBSize(); i++) {
+			TranslationEntry tlbEntry = processor.readTLBEntry(i);
+			TranslationEntry pageTableEntry = pageTable[tlbEntry.vpn];
+			tlbEntry = new TranslationEntry(pageTableEntry);
+			processor.writeTLBEntry(i, tlbEntry);
+		}
+	}
+
 	private int getTLBVictim() {
 		Processor processor = Machine.processor();
 		int tlbSize = processor.getTLBSize();
@@ -73,7 +110,6 @@ public class VMProcess extends UserProcess {
 		if (pageEntry.valid)
 			processor.writeTLBEntry(tlbVictim, pageEntry);
 		else {
-
 		}
 	}
 
