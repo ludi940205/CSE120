@@ -127,7 +127,7 @@ void testJoin() {
     argv[1] = NULL;
     argc = 2;
 
-    for (i = 0; i < 3; i++) {
+    for (i = 0; i < 2; i++) {
         argv[1] = args[i];
         pid = exec(executable, argc, argv);
         assertMsg(pid > 1, "JOIN TEST: unable to exec testException.coff\n");
