@@ -118,8 +118,8 @@ void testJoin() {
     joinRet = join(0, &exitstatus);
     assertMsg(joinRet == -1, "JOIN TEST: join to a non child not right\n");
 
-    joinRet = join(1, &exitstatus);
-    assertMsg(joinRet == -1, "JOIN TEST: join to a myself not right\n");
+    //joinRet = join(1, &exitstatus);
+    //assertMsg(joinRet == -1, "JOIN TEST: join to myself not right\n");
 
     executable = "testException.coff";
     argv[0] = executable;

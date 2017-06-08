@@ -132,3 +132,131 @@ int creat(char *name);
 
 /**
  * Attempt to open the named file and return a file descriptor.
+ *
+ * Note that open() can only be used to open files on disk; open() will never
+ * return a file descriptor referring to a stream.
+ *
+ * Returns the new file descriptor, or -1 if an error occurred.
+ */
+int open(char *name);
+
+/**
+ * Attempt to read up to count bytes into buffer from the file or stream
+ * referred to by fileDescriptor.
+ *
+ * On success, the number of bytes read is returned. If the file descriptor
+ * refers to a file on disk, the file position is advanced by this number.
+ *
+ * It is not necessarily an error if this number is smaller than the number of
+ * bytes requested. If the file descriptor refers to a file on disk, this
+ * indicates that the end of the file has been reached. If the file descriptor
+ * refers to a stream, this indicates that the fewer bytes are actually
+ * available right now than were requested, but more bytes may become available
+ * in the future. Note that read() never waits for a stream to have more data;
+ * it always returns as much as possible immediately.
+ *
+ * On error, -1 is returned, and the new file position is undefined. This can
+ * happen if fileDescriptor is invalid, if part of the buffer is read-only or
+ * invalid, or if a network stream has been terminated by the remote host and
+ * no more data is available.
+ */
+int read(int fileDescriptor, void *buffer, int count);
+
+/**
+ * Attempt to write up to count bytes from buffer to the file or stream
+ * referred to by fileDescriptor. write() can return before the bytes are
+ * actually flushed to the file or stream. A write to a stream can block,
+ * however, if kernel queues are temporarily full.
+ *
+ * On success, the number of bytes written is returned (zero indicates nothing
+ * was written), and the file position is advanced by this number. It IS an
+ * error if this number is smaller than the number of bytes requested. For
+ * disk files, this indicates that the disk is full. For streams, this
+ * indicates the stream was terminated by the remote host before all the data
+ * was transferred.
+ *
+ * On error, -1 is returned, and the new file position is undefined. This can
+ * happen if fileDescriptor is invalid, if part of the buffer is invalid, or
+ * if a network stream has already been terminated by the remote host.
+ */
+int write(int fileDescriptor, void *buffer, int count);
+
+/**
+ * Close a file descriptor, so that it no longer refers to any file or stream
+ * and may be reused.
+ *
+ * If the file descriptor refers to a file, all data written to it by write()
+ * will be flushed to disk before close() returns.
+ * If the file descriptor refers to a stream, all data written to it by write()
+ * will eventually be flushed (unless the stream is terminated remotely), but
+ * not necessarily before close() returns.
+ *
+ * The resources associated with the file descriptor are released. If the
+ * descriptor is the last reference to a disk file which has been removed using
+ * unlink, the file is deleted (this detail is handled by the file system
+ * implementation).
+ *
+ * Returns 0 on success, or -1 if an error occurred.
+ */
+int close(int fileDescriptor);
+
+/**
+ * Delete a file from the file system. If no processes have the file open, the
+ * file is deleted immediately and the space it was using is made available for
+ * reuse.
+ *
+ * If any processes still have the file open, the file will remain in existence
+ * until the last file descriptor referring to it is closed. However, creat()
+ * and open() will not be able to return new file descriptors for the file
+ * until it is deleted.
+ *
+ * Returns 0 on success, or -1 if an error occurred.
+ */
+int unlink(char *name);
+
+/**
+ * Map the file referenced by fileDescriptor into memory at address. The file
+ * may be as large as 0x7FFFFFFF bytes.
+ * 
+ * To maintain consistency, further calls to read() and write() on this file
+ * descriptor will fail (returning -1) until the file descriptor is closed.
+ *
+ * When the file descriptor is closed, all remaining dirty pages of the map
+ * will be flushed to disk and the map will be removed.
+ *
+ * Returns the length of the file on success, or -1 if an error occurred.
+ */
+int mmap(int fileDescriptor, char *address);
+
+/**
+ * Attempt to initiate a new connection to the specified port on the specified
+ * remote host, and return a new file descriptor referring to the connection.
+ * connect() does not give up if the remote host does not respond immediately.
+ *
+ * Returns the new file descriptor, or -1 if an error occurred.
+ */
+int connect(int host, int port);
+
+/**
+ * Attempt to accept a single connection on the specified local port and return
+ * a file descriptor referring to the connection.
+ *
+ * If any connection requests are pending on the port, one request is dequeued
+ * and an acknowledgement is sent to the remote host (so that its connect()
+ * call can return). Since the remote host will never cancel a connection
+ * request, there is no need for accept() to wait for the remote host to
+ * confirm the connection (i.e. a 2-way handshake is sufficient; TCP's 3-way
+ * handshake is unnecessary).
+ *
+ * If no connection requests are pending, returns -1 immediately.
+ *
+ * In either case, accept() returns without waiting for a remote host.
+ *
+ * Returns a new file descriptor referring to the connection, or -1 if an error
+ * occurred.
+ */
+int accept(int port);
+
+#endif /* START_S */
+
+#endif /* SYSCALL_H */
