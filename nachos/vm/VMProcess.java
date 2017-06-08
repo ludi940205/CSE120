@@ -34,7 +34,6 @@ public class VMProcess extends UserProcess {
 	 * <tt>UThread.restoreState()</tt>.
 	 */
 	public void restoreState() {
-
 	}
 
 	/**
@@ -57,19 +56,21 @@ public class VMProcess extends UserProcess {
 	private void handleTLBMiss(int vAddr) {
 		Processor processor = Machine.processor();
 		int tlbSize = processor.getTLBSize();
-		int insertPos = -1;
+		int tlbVictimPos = -1;
 		for (int i = 0; i < tlbSize; i++) {
 			TranslationEntry tlbEntry = processor.readTLBEntry(i);
 			if (!tlbEntry.valid) {
-				insertPos = i;
+				tlbVictimPos = i;
 				break;
 			}
 		}
-		if (insertPos == -1) {
-			insertPos = Lib.random(tlbSize);
+		if (tlbVictimPos == -1) {
+			tlbVictimPos = Lib.random(tlbSize);
 		}
 
 		int vpn = Processor.pageFromAddress(vAddr);
+		TranslationEntry pageEntry = pageTable[vpn];
+		processor.writeTLBEntry(tlbVictimPos, pageEntry);
 	}
 
 	/**
@@ -86,6 +87,7 @@ public class VMProcess extends UserProcess {
 			case Processor.exceptionTLBMiss:
 				handleTLBMiss(processor.readRegister(Processor.regBadVAddr));
 		default:
+			super.handleException(cause);
 			break;
 		}
 	}

@@ -5,6 +5,9 @@ import nachos.threads.*;
 import nachos.userprog.*;
 import nachos.vm.*;
 
+import java.io.File;
+import java.util.HashMap;
+
 /**
  * A kernel that can support multiple demand-paging user processes.
  */
@@ -21,6 +24,8 @@ public class VMKernel extends UserKernel {
 	 */
 	public void initialize(String[] args) {
 		super.initialize(args);
+		swapFile = ThreadedKernel.fileSystem.open(swapFileName, true);
+		globalPageTable = new PageTable();
 	}
 
 	/**
@@ -41,11 +46,28 @@ public class VMKernel extends UserKernel {
 	 * Terminate this kernel. Never returns.
 	 */
 	public void terminate() {
+		swapFile.close();
+		ThreadedKernel.fileSystem.remove(swapFileName);
 		super.terminate();
+	}
+
+	class PageTable extends HashMap<Integer[], TranslationEntry> {
+		boolean insertPage(Integer[] pidAndVpn, TranslationEntry entry) {
+			lock.acquire();
+			put(pidAndVpn, entry);
+			lock.release();
+			return true;
+		}
+		private Lock lock;
 	}
 
 	// dummy variables to make javac smarter
 	private static VMProcess dummy1 = null;
 
 	private static final char dbgVM = 'v';
+
+	private static String swapFileName = "swap";
+	private static OpenFile swapFile;
+
+	static PageTable globalPageTable;
 }

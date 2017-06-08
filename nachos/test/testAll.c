@@ -252,7 +252,7 @@ void testFileSystemPressure() {
         assertMsg(files[i] != -1, "FILE SYSTEM PRESSURE TEST: unable to create again\n");
     }
 
-    for (i = 0; i < 20; i++) {
+    for (i = 0; i < 14; i++) {
         flag = close(files[i]);
         assertMsg(flag == 0, "FILE SYSTEM PRESSURE TEST: unable to close\n");
     }
