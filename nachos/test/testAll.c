@@ -98,6 +98,7 @@ void testPID() {
 void testJoin() {
     char* executable;
     char* argv[2];
+    char* args[3] = {"0", "1", "2"};
     int pid, argc, exitstatus, joinRet, i;
 
     executable = "testExit.coff";
@@ -127,7 +128,7 @@ void testJoin() {
     argc = 2;
 
     for (i = 0; i < 3; i++) {
-        argv[1] = '0' + i;
+        argv[1] = args[i];
         pid = exec(executable, argc, argv);
         assertMsg(pid > 1, "JOIN TEST: unable to exec testException.coff\n");
         joinRet = join(pid, &exitstatus);
