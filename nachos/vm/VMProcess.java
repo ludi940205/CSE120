@@ -4,6 +4,12 @@ import nachos.machine.*;
 import nachos.threads.*;
 import nachos.userprog.*;
 import nachos.vm.*;
+import sun.security.jca.GetInstance;
+
+import java.lang.reflect.Array;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 
 /**
  * A <tt>UserProcess</tt> that supports demand-paging.
@@ -43,7 +49,16 @@ public class VMProcess extends UserProcess {
 	 * @return <tt>true</tt> if successful.
 	 */
 	protected boolean loadSections() {
-		return super.loadSections();
+		for (int s=0; s<coff.getNumSections(); s++) {
+			CoffSection section = coff.getSection(s);
+
+			for (int i=0; i<section.getLength(); i++) {
+				int vpn = section.getFirstVPN()+i;
+
+				pageTable[vpn].readOnly = section.isReadOnly();
+				section.loadPage(i, pinVirtualPage(vpn, false));
+			}
+		}
 	}
 
 	/**
@@ -53,14 +68,19 @@ public class VMProcess extends UserProcess {
 		super.unloadSections();
 	}
 
+	protected void lazyLoad(int vpn) {
+		if ()
+	}
+
 	@Override
 	protected int pinVirtualPage(int vpn, boolean isUserWrite) {
 		if (vpn < 0 || vpn >= pageTable.length)
 			return -1;
 
+
 		Pair pair = new Pair(processID(), vpn);
 		TranslationEntry entry = VMKernel.globalPageTable.getPage(pair);
-		VMKernel.globalPageTable.pinPage(pair);
+		VMKernel.globalPageTable.pinPage(entry);
 		if (!entry.valid || entry.vpn != vpn)
 			return -1;
 
@@ -77,7 +97,8 @@ public class VMProcess extends UserProcess {
 
 	@Override
 	protected void unpinVirtualPage(int vpn) {
-		VMKernel.globalPageTable.unpinPage(new Pair(processID(), vpn));
+		TranslationEntry entry = VMKernel.globalPageTable.getPage(new Pair(processID(), vpn));
+		VMKernel.globalPageTable.unpinPage(entry);
 	}
 
 	private void synchronizeTLB() {

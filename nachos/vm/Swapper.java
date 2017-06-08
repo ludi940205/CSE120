@@ -9,9 +9,8 @@ import java.util.HashSet;
 import java.util.LinkedList;
 
 public class Swapper {
-    public Swapper(String fileName) {
+    public Swapper() {
         Lib.assertTrue(count++ == 0);
-        swapFileName = fileName;
         swapFile = ThreadedKernel.fileSystem.open(swapFileName, true);
         freeList.add(0);
     }
@@ -31,13 +30,14 @@ public class Swapper {
 
     }
 
-    public boolean swapFromDiskToMemory() {
+    public boolean swapFromDiskToMemory(Pair pair) {
+        int pos = table.get(pair);
 
     }
 
     public boolean swapFromMemoryToDisk(Pair pair) {
         int pos;
-        TranslationEntry entry = VMKernel.globalPageTable.getPage(pair);
+        TranslationEntry entry = VMKernel.globalPageTable.getPage();
         if (entry == null)
             return false;
         if (table.containsKey(pair)) {
@@ -59,7 +59,7 @@ public class Swapper {
 
     private int currSize = 0;
 
-    private String swapFileName;
+    private String swapFileName = "swapFile";
     private OpenFile swapFile;
 
     private int pageSize;

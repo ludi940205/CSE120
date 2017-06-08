@@ -15,6 +15,7 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
         for (int i = 0; i < invertedPageTable.length; i++)
             freePages.add(i);
         pinnedPages = new HashSet<>();
+        swapper = new Swapper();
     }
 
     boolean insertPage(Pair pair, TranslationEntry entry) {
@@ -28,18 +29,25 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
         lock.acquire();
         TranslationEntry entry  = get(pair);
         if (entry == null || !entry.valid) {
-            //TODO
+            if (entry.vpn >= 0) {
+                CoffSection section =
+            }
+            swapper.swapFromDiskToMemory(pair);
         }
         lock.release();
         return entry;
     }
 
-    void pinPage(Pair pair) {
-        pinnedPages.add(pair);
+    TranslationEntry loadCoff(Coff coff) {
+
     }
 
-    void unpinPage(Pair pair) {
-        pinnedPages.remove(pair);
+    void pinPage(TranslationEntry entry) {
+        pinnedPages.add(entry);
+    }
+
+    void unpinPage(TranslationEntry entry) {
+        pinnedPages.remove(entry);
     }
 
     int selectVictim() {
@@ -61,11 +69,13 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
 
     private int victim = 0;
 
-    private HashSet<Pair> pinnedPages;
+    private HashSet<TranslationEntry> pinnedPages;
 
     private Pair[] invertedPageTable;
 
     private LinkedList<Integer> freePages;
 
     private Lock lock;
+
+    private Swapper swapper;
 }
