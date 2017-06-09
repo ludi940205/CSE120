@@ -4,8 +4,6 @@ import nachos.machine.*;
 import nachos.threads.*;
 import nachos.userprog.*;
 import nachos.vm.*;
-import org.omg.CORBA.FREE_MEM;
-import sun.misc.VM;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -40,9 +38,16 @@ public class VMProcess extends UserProcess {
 	 * <tt>UThread.restoreState()</tt>.
 	 */
 	public void restoreState() {
-		if (previousTLBState != null)
-			for (int i = 0; i < previousTLBState.length; i++)
+		if (previousTLBState != null) {
+			for (int i = 0; i < previousTLBState.length; i++) {
+				TranslationEntry pageTableEntry = VMKernel.globalPageTable.get(
+						new Pair(processID(), previousTLBState[i].vpn));
+				if (pageTableEntry != null)
+					previousTLBState[i].valid &= pageTableEntry.valid;
 				Machine.processor().writeTLBEntry(i, previousTLBState[i]);
+			}
+		}
+		synchronizeFromTLB();
 	}
 
 	/**
@@ -163,6 +168,31 @@ public class VMProcess extends UserProcess {
 			pageEntry = lazyLoad(vpn);
 		if (pageEntry.valid)
 			processor.writeTLBEntry(tlbVictim, pageEntry);
+		Lib.assertTrue(checkTLB());
+	}
+
+	public boolean checkTLB() {
+		Processor processor = Machine.processor();
+		for (int i = 0; i < processor.getTLBSize(); i++) {
+			TranslationEntry tEntry = processor.readTLBEntry(i);
+			TranslationEntry pEntry = VMKernel.globalPageTable.get(new Pair(VMKernel.currentProcess().processID(), tEntry.vpn));
+			if (tEntry.valid) {
+//				System.out.println(String.valueOf(tEntry.valid) + String.valueOf(pEntry.valid));
+//				System.out.println(String.valueOf(tEntry.vpn) + String.valueOf(pEntry.vpn));
+//				System.out.println(String.valueOf(tEntry.ppn) + String.valueOf(pEntry.ppn));
+				try {
+					Lib.assertTrue(pEntry.valid);
+					Lib.assertTrue(tEntry.vpn == pEntry.vpn);
+					Lib.assertTrue(tEntry.ppn == pEntry.ppn);
+					Lib.assertTrue(tEntry.dirty == pEntry.dirty);
+					Lib.assertTrue(tEntry.used == pEntry.used);
+				}
+				catch (Error e) {
+					return false;
+				}
+			}
+		}
+		return true;
 	}
 
 	/**

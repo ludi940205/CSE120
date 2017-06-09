@@ -35,6 +35,8 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
         put(pair, entry);
         invertedPageTable[entry.ppn] = pair;
 
+//        checkTLB();
+
         lock.release();
     }
 
@@ -56,13 +58,16 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
             put(pair, entry);
             invertedPageTable[entry.ppn] = pair;
         }
+
+//        checkTLB();
+
         lock.release();
         return entry;
     }
 
     void removePage(Pair pair) {
         lock.acquire();
-        TranslationEntry entry  = get(pair);
+        TranslationEntry entry = get(pair);
         if (entry == null) {
             lock.release();
             return;
@@ -72,6 +77,15 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
         freePages.add(entry.ppn);
         remove(pair);
         invertedPageTable[entry.ppn] = null;
+        for (int i = 0; i < Machine.processor().getTLBSize(); i++) {
+            TranslationEntry tlbEntry = Machine.processor().readTLBEntry(i);
+            if (tlbEntry.ppn == entry.ppn)
+                tlbEntry.valid = false;
+            Machine.processor().writeTLBEntry(i, tlbEntry);
+        }
+
+//        checkTLB();
+
         lock.release();
     }
 
@@ -111,14 +125,17 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
     }
 
     private int selectVictim() {
+//        victim = Math.max(victim, invertedPageTable.length-1);
         while (true) {
-            TranslationEntry entry = get(invertedPageTable[Math.max(victim, invertedPageTable.length-1)]);
-            if (!entry.used && !pinnedPages.contains(invertedPageTable[victim])) {
-                int toEvict = victim;
-                victim = (victim + 1) % invertedPageTable.length;
-                return toEvict;
+            TranslationEntry entry = get(invertedPageTable[victim]);
+            if (entry != null) {
+                if (!entry.used && !pinnedPages.contains(invertedPageTable[victim])) {
+                    int toEvict = victim;
+                    victim = (victim + 1) % invertedPageTable.length;
+                    return toEvict;
+                }
+                entry.used = false;
             }
-            entry.used = false;
             victim = (victim + 1) % invertedPageTable.length;
         }
     }
@@ -126,6 +143,27 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
     public boolean isPageValid(int ppn) {
         TranslationEntry entry = get(invertedPageTable[ppn]);
         return entry != null && entry.valid;
+    }
+
+    public void terminate() {
+        swapper.terminate();
+    }
+
+    public void checkTLB() {
+        Processor processor = Machine.processor();
+        for (int i = 0; i < processor.getTLBSize(); i++) {
+            TranslationEntry tEntry = processor.readTLBEntry(i);
+            TranslationEntry pEntry = get(new Pair(VMKernel.currentProcess().processID(), tEntry.vpn));
+            if (tEntry.valid) {
+                System.out.println(String.valueOf(tEntry.valid) + String.valueOf(pEntry.valid));
+                System.out.println(String.valueOf(tEntry.vpn) + String.valueOf(pEntry.vpn));
+                System.out.println(String.valueOf(tEntry.ppn) + String.valueOf(pEntry.ppn));
+                Lib.assertTrue(pEntry.valid);
+                Lib.assertTrue(tEntry.vpn == pEntry.vpn);
+                Lib.assertTrue(tEntry.ppn == pEntry.ppn);
+
+            }
+        }
     }
 
     private int victim = 0;
