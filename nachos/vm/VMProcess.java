@@ -4,9 +4,10 @@ import nachos.machine.*;
 import nachos.threads.*;
 import nachos.userprog.*;
 import nachos.vm.*;
-import sun.security.jca.GetInstance;
+import org.omg.CORBA.FREE_MEM;
+import sun.misc.VM;
 
-import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -28,11 +29,7 @@ public class VMProcess extends UserProcess {
 	 */
 	public void saveState() {
 		super.saveState();
-		for (int i = 0; i < Machine.processor().getTLBSize(); i++) {
-			TranslationEntry tlbEntry = Machine.processor().readTLBEntry(i);
-			tlbEntry.valid = false;
-			Machine.processor().writeTLBEntry(i, tlbEntry);
-		}
+		invalidateTLB();
 	}
 
 	/**
@@ -49,16 +46,7 @@ public class VMProcess extends UserProcess {
 	 * @return <tt>true</tt> if successful.
 	 */
 	protected boolean loadSections() {
-		for (int s=0; s<coff.getNumSections(); s++) {
-			CoffSection section = coff.getSection(s);
-
-			for (int i=0; i<section.getLength(); i++) {
-				int vpn = section.getFirstVPN()+i;
-
-				pageTable[vpn].readOnly = section.isReadOnly();
-				section.loadPage(i, pinVirtualPage(vpn, false));
-			}
-		}
+		return true;
 	}
 
 	/**
@@ -66,21 +54,54 @@ public class VMProcess extends UserProcess {
 	 */
 	protected void unloadSections() {
 		super.unloadSections();
+		invalidateTLB();
+		for (int i = 0; i < numPages; i++)
+			VMKernel.globalPageTable.removePage(new Pair(processID(), i));
 	}
 
-	protected void lazyLoad(int vpn) {
-		if ()
+	private void invalidateTLB() {
+		Processor processor = Machine.processor();
+		for (int i = 0; i < processor.getTLBSize(); i++) {
+			TranslationEntry tlbEntry = processor.readTLBEntry(i);
+			tlbEntry.valid = false;
+			processor.writeTLBEntry(i, tlbEntry);
+		}
+	}
+
+	protected boolean lazyLoad(int vpn) {
+		if (vpn < 0 || vpn >= numPages)
+			return false;
+		TranslationEntry entry = VMKernel.globalPageTable.getPage(new Pair(processID(), vpn));
+		if (entry == null) {
+			if (vpn < numPages - stackPages - 1) {
+				CoffSection section = coff.getSection(vpn);
+
+				TranslationEntry newEntry = new TranslationEntry(vpn, -1,
+						true, section.isReadOnly(), false, false);
+				VMKernel.globalPageTable.insertPage(new Pair(processID(), vpn), newEntry);
+				section.loadPage(vpn - section.getFirstVPN(), newEntry.ppn);
+			}
+			else {
+				TranslationEntry newEntry = new TranslationEntry(vpn, -1,
+						true, false, false, false);
+				VMKernel.globalPageTable.insertPage(new Pair(processID(), vpn), newEntry);
+				Arrays.fill(Machine.processor().getMemory(),
+						newEntry.ppn * pageSize, (newEntry.ppn+1) * pageSize, (byte) 0);
+			}
+		}
+		return true;
 	}
 
 	@Override
 	protected int pinVirtualPage(int vpn, boolean isUserWrite) {
 		if (vpn < 0 || vpn >= pageTable.length)
 			return -1;
-
+		if (!lazyLoad(vpn))
+			return -1;
 
 		Pair pair = new Pair(processID(), vpn);
 		TranslationEntry entry = VMKernel.globalPageTable.getPage(pair);
-		VMKernel.globalPageTable.pinPage(entry);
+		VMKernel.globalPageTable.pinPage(pair);
 		if (!entry.valid || entry.vpn != vpn)
 			return -1;
 
@@ -97,8 +118,7 @@ public class VMProcess extends UserProcess {
 
 	@Override
 	protected void unpinVirtualPage(int vpn) {
-		TranslationEntry entry = VMKernel.globalPageTable.getPage(new Pair(processID(), vpn));
-		VMKernel.globalPageTable.unpinPage(entry);
+		VMKernel.globalPageTable.unpinPage(new Pair(processID(), vpn));
 	}
 
 	private void synchronizeTLB() {
@@ -127,11 +147,9 @@ public class VMProcess extends UserProcess {
 		Processor processor = Machine.processor();
 		int tlbVictim = getTLBVictim();
 		int vpn = Processor.pageFromAddress(vAddr);
-		TranslationEntry pageEntry = pageTable[vpn];
+		TranslationEntry pageEntry = VMKernel.globalPageTable.getPage(new Pair(processID(), vpn));
 		if (pageEntry.valid)
 			processor.writeTLBEntry(tlbVictim, pageEntry);
-		else {
-		}
 	}
 
 	/**
@@ -153,6 +171,8 @@ public class VMProcess extends UserProcess {
 			break;
 		}
 	}
+
+	private Lock
 
 	private static final int pageSize = Processor.pageSize;
 

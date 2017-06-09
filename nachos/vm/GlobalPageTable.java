@@ -18,58 +18,78 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
         swapper = new Swapper();
     }
 
-    boolean insertPage(Pair pair, TranslationEntry entry) {
+    // insert a page into global page table, if no place available, swap out a page to disk
+    void insertPage(Pair pair, TranslationEntry entry) {
         lock.acquire();
+
+        if (freePages.isEmpty()) {
+            int ppn = selectVictim();
+            Pair original = invertedPageTable[ppn];
+            swapper.swapFromMemoryToDisk(original);
+            entry.ppn = ppn;
+        }
+        else {
+            entry.ppn = freePages.removeFirst();
+        }
+        entry.valid = true;
         put(pair, entry);
+        invertedPageTable[entry.ppn] = pair;
+
         lock.release();
-        return true;
     }
 
+    // get a page from global page table, if the page is not in memory, swap in a page to memory
     TranslationEntry getPage(Pair pair) {
         lock.acquire();
-        TranslationEntry entry  = get(pair);
-        if (entry == null || !entry.valid) {
-            if (entry.vpn >= 0) {
-                CoffSection section =
+        TranslationEntry entry = get(pair);
+        if (entry == null)
+            return null;
+        else if (!entry.valid) {
+            if (freePages.isEmpty()) {
+                entry.ppn = swapper.swapFromMemoryToDisk(pair);
+                entry.ppn = swapper.swapFromDiskToMemory(entry);
+                entry.valid = true;
             }
-            swapper.swapFromDiskToMemory(pair);
         }
         lock.release();
         return entry;
     }
 
-    TranslationEntry loadCoff(Coff coff) {
-
+    void removePage(Pair pair) {
+        TranslationEntry entry  = get(pair);
+        if (entry == null)
+            return;
+        if (!entry.valid)
+            swapper.freePageFromDisk(pair);
+        freePages.add(entry.ppn);
+        remove(pair);
+        invertedPageTable[entry.ppn] = null;
     }
 
-    void pinPage(TranslationEntry entry) {
-        pinnedPages.add(entry);
+    void pinPage(Pair pair) {
+        pinnedPages.add(pair);
     }
 
-    void unpinPage(TranslationEntry entry) {
-        pinnedPages.remove(entry);
+    void unpinPage(Pair pair) {
+        pinnedPages.remove(pair);
     }
 
-    int selectVictim() {
-        if (freePages.isEmpty()) {
-            while (true) {
-                TranslationEntry entry = get(invertedPageTable[victim]);
-                if (!entry.used && !pinnedPages.contains(invertedPageTable[victim])) {
-                    int toEvict = victim;
-                    victim = (victim + 1) % invertedPageTable.length;
-                    return toEvict;
-                }
-                entry.used = false;
+    private int selectVictim() {
+        while (true) {
+            TranslationEntry entry = get(invertedPageTable[victim]);
+            if (!entry.used && !pinnedPages.contains(invertedPageTable[victim])) {
+                int toEvict = victim;
                 victim = (victim + 1) % invertedPageTable.length;
+                return toEvict;
             }
+            entry.used = false;
+            victim = (victim + 1) % invertedPageTable.length;
         }
-        else
-            return freePages.removeFirst();
     }
 
     private int victim = 0;
 
-    private HashSet<TranslationEntry> pinnedPages;
+    private HashSet<Pair> pinnedPages;
 
     private Pair[] invertedPageTable;
 
