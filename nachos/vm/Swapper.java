@@ -34,34 +34,52 @@ public class Swapper {
     }
 
     //swap from disk to memory, return the resulting ppn
-    public int swapFromDiskToMemory(Pair pair) {
-        TranslationEntry entry = VMKernel.globalPageTable.getPage(pair);
-        Lib.assertTrue(!entry.valid);
+    public boolean swapFromDiskToMemory(Pair inPair, TranslationEntry inEntry) {
+        Lib.assertTrue(!inEntry.valid);
+        Lib.assertTrue(!VMKernel.globalPageTable.isPageValid(inEntry.ppn));
 
-        int pos = table.get(pair);
-        byte[] memory = Machine.processor().getMemory();
-        byte[] buffer;
+        int ppn = inEntry.ppn;
+        if (!table.containsKey(inPair) || inEntry.dirty) {
+            int diskPos = table.get(inPair);
+            byte[] buffer = new byte[pageSize];
+            swapFile.read(diskPos, buffer, 0, pageSize);
+            System.arraycopy(buffer, 0, Machine.processor().getMemory(), ppn * pageSize, pageSize);
+        }
+        inEntry.valid = true;
+        inEntry.used = false;
+        inEntry.dirty = false;
 
+        return true;
     }
 
-    public boolean swapFromMemoryToDisk(Pair pair) {
-        int pos;
-        TranslationEntry entry = VMKernel.globalPageTable.getPage(pair);
-        if (entry == null)
+    public boolean swapFromMemoryToDisk(Pair outPair, TranslationEntry outEntry) {
+        int diskPos;
+        if (outEntry == null)
             return false;
-        if (table.containsKey(pair)) {
-            if (!entry.dirty)
+
+        int ppn = outEntry.ppn;
+        if (table.containsKey(outPair)) {
+            if (!outEntry.dirty)
                 return true;
             else
-                pos = table.get(pair);
+                diskPos = table.get(outPair);
         }
         else
-            pos = findFreePosition();
+            diskPos = findFreePosition();
+        for (int i = 0; i < Machine.processor().getTLBSize(); i++) {
+            TranslationEntry tlbEntry = Machine.processor().readTLBEntry(i);
+            if (tlbEntry.vpn == outEntry.vpn)
+                tlbEntry.valid = false;
+            Machine.processor().writeTLBEntry(i, tlbEntry);
+        }
+        outEntry.valid = false;
+        outEntry.dirty = false;
+        outEntry.used = false;
 
         byte[] buffer = new byte[pageSize];
-        System.arraycopy(Machine.processor().getMemory(), entry.ppn * pageSize, buffer, 0, pageSize);
-        swapFile.write(pos, buffer, 0, pageSize);
-        table.put(pair, pos);
+        System.arraycopy(Machine.processor().getMemory(), ppn * pageSize, buffer, 0, pageSize);
+        swapFile.write(diskPos, buffer, 0, pageSize);
+        table.put(outPair, diskPos);
         return true;
     }
 
@@ -69,7 +87,7 @@ public class Swapper {
 
     private LinkedList<Integer> freeList = new LinkedList<>();
 
-    private int currSize = 0;
+    private int currSize = 1;
 
     private String swapFileName = "swapFile";
     private OpenFile swapFile;

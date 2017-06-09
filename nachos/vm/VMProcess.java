@@ -29,6 +29,9 @@ public class VMProcess extends UserProcess {
 	 */
 	public void saveState() {
 		super.saveState();
+		previousTLBState = new TranslationEntry[Machine.processor().getTLBSize()];
+		for (int i = 0; i < previousTLBState.length; i++)
+			previousTLBState[i] = new TranslationEntry(Machine.processor().readTLBEntry(i));
 		invalidateTLB();
 	}
 
@@ -37,6 +40,9 @@ public class VMProcess extends UserProcess {
 	 * <tt>UThread.restoreState()</tt>.
 	 */
 	public void restoreState() {
+		if (previousTLBState != null)
+			for (int i = 0; i < previousTLBState.length; i++)
+				Machine.processor().writeTLBEntry(i, previousTLBState[i]);
 	}
 
 	/**
@@ -53,7 +59,7 @@ public class VMProcess extends UserProcess {
 	 * Release any resources allocated by <tt>loadSections()</tt>.
 	 */
 	protected void unloadSections() {
-		super.unloadSections();
+//		super.unloadSections();
 		invalidateTLB();
 		for (int i = 0; i < numPages; i++)
 			VMKernel.globalPageTable.removePage(new Pair(processID(), i));
@@ -68,35 +74,40 @@ public class VMProcess extends UserProcess {
 		}
 	}
 
-	protected boolean lazyLoad(int vpn) {
+	protected TranslationEntry lazyLoad(int vpn) {
+		lazyLoadLock.acquire();
 		if (vpn < 0 || vpn >= numPages)
-			return false;
+			return null;
 		TranslationEntry entry = VMKernel.globalPageTable.getPage(new Pair(processID(), vpn));
 		if (entry == null) {
+			TranslationEntry newEntry = new TranslationEntry(vpn, -1,
+					true, false, false, false);
 			if (vpn < numPages - stackPages - 1) {
-				CoffSection section = coff.getSection(vpn);
-
-				TranslationEntry newEntry = new TranslationEntry(vpn, -1,
-						true, section.isReadOnly(), false, false);
+				int s = 0;
+				for (; s < coff.getNumSections(); s++)
+					if (coff.getSection(s).getFirstVPN() > vpn)
+						break;
+				CoffSection section = coff.getSection(s - 1);
+				newEntry.readOnly = section.isReadOnly();
 				VMKernel.globalPageTable.insertPage(new Pair(processID(), vpn), newEntry);
 				section.loadPage(vpn - section.getFirstVPN(), newEntry.ppn);
 			}
 			else {
-				TranslationEntry newEntry = new TranslationEntry(vpn, -1,
-						true, false, false, false);
 				VMKernel.globalPageTable.insertPage(new Pair(processID(), vpn), newEntry);
 				Arrays.fill(Machine.processor().getMemory(),
 						newEntry.ppn * pageSize, (newEntry.ppn+1) * pageSize, (byte) 0);
 			}
+			entry = newEntry;
 		}
-		return true;
+		lazyLoadLock.release();
+		return entry;
 	}
 
 	@Override
 	protected int pinVirtualPage(int vpn, boolean isUserWrite) {
-		if (vpn < 0 || vpn >= pageTable.length)
+		if (vpn < 0 || vpn >= numPages)
 			return -1;
-		if (!lazyLoad(vpn))
+		if (lazyLoad(vpn) == null)
 			return -1;
 
 		Pair pair = new Pair(processID(), vpn);
@@ -113,6 +124,8 @@ public class VMProcess extends UserProcess {
 
 		entry.used = true;
 
+//		synchronizeToTLB();
+
 		return entry.ppn;
 	}
 
@@ -121,14 +134,12 @@ public class VMProcess extends UserProcess {
 		VMKernel.globalPageTable.unpinPage(new Pair(processID(), vpn));
 	}
 
-	private void synchronizeTLB() {
-		Processor processor = Machine.processor();
-		for (int i = 0; i < processor.getTLBSize(); i++) {
-			TranslationEntry tlbEntry = processor.readTLBEntry(i);
-			TranslationEntry pageTableEntry = pageTable[tlbEntry.vpn];
-			tlbEntry = new TranslationEntry(pageTableEntry);
-			processor.writeTLBEntry(i, tlbEntry);
-		}
+	private void synchronizeToTLB() {
+		VMKernel.globalPageTable.synchronizeToTLB(processID());
+	}
+
+	private void synchronizeFromTLB() {
+		VMKernel.globalPageTable.synchronizeFromTLB(processID());
 	}
 
 	private int getTLBVictim() {
@@ -148,6 +159,8 @@ public class VMProcess extends UserProcess {
 		int tlbVictim = getTLBVictim();
 		int vpn = Processor.pageFromAddress(vAddr);
 		TranslationEntry pageEntry = VMKernel.globalPageTable.getPage(new Pair(processID(), vpn));
+		if (pageEntry == null)
+			pageEntry = lazyLoad(vpn);
 		if (pageEntry.valid)
 			processor.writeTLBEntry(tlbVictim, pageEntry);
 	}
@@ -161,6 +174,7 @@ public class VMProcess extends UserProcess {
 	 */
 	public void handleException(int cause) {
 		Processor processor = Machine.processor();
+		synchronizeFromTLB();
 
 		switch (cause) {
 			case Processor.exceptionTLBMiss:
@@ -172,7 +186,9 @@ public class VMProcess extends UserProcess {
 		}
 	}
 
-	private Lock
+	private Lock lazyLoadLock = new Lock();
+
+	private TranslationEntry[] previousTLBState;
 
 	private static final int pageSize = Processor.pageSize;
 

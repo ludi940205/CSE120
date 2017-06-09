@@ -17,8 +17,10 @@ public class Pair {
             Pair p1 = (Pair) o;
             return p1.vpn.equals(this.vpn) && p1.pid.equals(this.pid);
         }
+        else
+            return false;
     }
 
-    Integer pid;
-    Integer vpn;
+    private Integer pid;
+    private Integer vpn;
 }

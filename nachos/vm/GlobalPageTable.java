@@ -24,13 +24,13 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
 
         if (freePages.isEmpty()) {
             int ppn = selectVictim();
-            Pair original = invertedPageTable[ppn];
-            swapper.swapFromMemoryToDisk(original);
+            Pair victim = invertedPageTable[ppn];
+            TranslationEntry victimEntry = get(victim);
+            swapper.swapFromMemoryToDisk(victim, victimEntry);
             entry.ppn = ppn;
         }
-        else {
+        else
             entry.ppn = freePages.removeFirst();
-        }
         entry.valid = true;
         put(pair, entry);
         invertedPageTable[entry.ppn] = pair;
@@ -42,28 +42,37 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
     TranslationEntry getPage(Pair pair) {
         lock.acquire();
         TranslationEntry entry = get(pair);
-        if (entry == null)
-            return null;
-        else if (!entry.valid) {
+        if (entry != null && !entry.valid) {
             if (freePages.isEmpty()) {
-                entry.ppn = swapper.swapFromMemoryToDisk(pair);
-                entry.ppn = swapper.swapFromDiskToMemory(entry);
-                entry.valid = true;
+                int ppn = selectVictim();
+                Pair victim = invertedPageTable[ppn];
+                TranslationEntry victimEntry = get(victim);
+                swapper.swapFromMemoryToDisk(victim, victimEntry);
+                entry.ppn = victimEntry.ppn;
             }
+            else
+                entry.ppn = freePages.removeFirst();
+            swapper.swapFromDiskToMemory(pair, entry);
+            put(pair, entry);
+            invertedPageTable[entry.ppn] = pair;
         }
         lock.release();
         return entry;
     }
 
     void removePage(Pair pair) {
+        lock.acquire();
         TranslationEntry entry  = get(pair);
-        if (entry == null)
+        if (entry == null) {
+            lock.release();
             return;
+        }
         if (!entry.valid)
             swapper.freePageFromDisk(pair);
         freePages.add(entry.ppn);
         remove(pair);
         invertedPageTable[entry.ppn] = null;
+        lock.release();
     }
 
     void pinPage(Pair pair) {
@@ -74,9 +83,36 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
         pinnedPages.remove(pair);
     }
 
+    void synchronizeFromTLB(int pid) {
+        Processor processor = Machine.processor();
+        for (int i = 0; i < processor.getTLBSize(); i++) {
+            TranslationEntry tlbEntry = Machine.processor().readTLBEntry(i);
+            if (tlbEntry.valid) {
+                TranslationEntry pageTableEntry = get(new Pair(pid, tlbEntry.vpn));
+                pageTableEntry.readOnly = tlbEntry.readOnly;
+                pageTableEntry.used = tlbEntry.used;
+                pageTableEntry.dirty = tlbEntry.dirty;
+            }
+        }
+    }
+
+    void synchronizeToTLB(int pid) {
+        Processor processor = Machine.processor();
+        for (int i = 0; i < processor.getTLBSize(); i++) {
+            TranslationEntry tlbEntry = Machine.processor().readTLBEntry(i);
+            if (tlbEntry.valid) {
+                TranslationEntry pageTableEntry = get(new Pair(pid, tlbEntry.vpn));
+                tlbEntry.readOnly = pageTableEntry.readOnly;
+                tlbEntry.used = pageTableEntry.used;
+                tlbEntry.dirty = pageTableEntry.dirty;
+                processor.writeTLBEntry(i, tlbEntry);
+            }
+        }
+    }
+
     private int selectVictim() {
         while (true) {
-            TranslationEntry entry = get(invertedPageTable[victim]);
+            TranslationEntry entry = get(invertedPageTable[Math.max(victim, invertedPageTable.length-1)]);
             if (!entry.used && !pinnedPages.contains(invertedPageTable[victim])) {
                 int toEvict = victim;
                 victim = (victim + 1) % invertedPageTable.length;
@@ -87,6 +123,11 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
         }
     }
 
+    public boolean isPageValid(int ppn) {
+        TranslationEntry entry = get(invertedPageTable[ppn]);
+        return entry != null && entry.valid;
+    }
+
     private int victim = 0;
 
     private HashSet<Pair> pinnedPages;
@@ -95,7 +136,7 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
 
     private LinkedList<Integer> freePages;
 
-    private Lock lock;
+    private Lock lock = new Lock();
 
     private Swapper swapper;
 }
