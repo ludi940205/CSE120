@@ -5,9 +5,6 @@ import nachos.threads.*;
 import nachos.userprog.*;
 import nachos.vm.*;
 
-import java.io.File;
-import java.util.HashMap;
-
 /**
  * A kernel that can support multiple demand-paging user processes.
  */

@@ -1,6 +1,5 @@
 package nachos.vm;
 
-import javafx.geometry.VPos;
 import nachos.machine.*;
 import nachos.threads.*;
 import nachos.userprog.*;
