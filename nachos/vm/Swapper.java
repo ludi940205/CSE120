@@ -62,6 +62,10 @@ public class Swapper {
         inEntry.dirty = false;
         lock.release();
 
+        Lib.debug(dbgProcess, "swap (" + String.valueOf(inEntry.vpn) + ", " +
+                String.valueOf(inEntry.ppn) + ") from disk to memory");
+        logTLB();
+
         return true;
     }
 
@@ -98,6 +102,21 @@ public class Swapper {
             outEntry.dirty = false;
             outEntry.used = false;
             lock.release();
+
+            Lib.debug(dbgProcess, "swap (" + String.valueOf(outEntry.vpn) + ", " +
+                    String.valueOf(outEntry.ppn) + ") from memory to disk");
+            logTLB();
+        }
+    }
+
+    private void logTLB() {
+        Processor processor = Machine.processor();
+        Lib.debug(dbgProcess, "current TLB config:");
+        for (int i = 0; i < processor.getTLBSize(); i++) {
+            TranslationEntry tlbEntry = processor.readTLBEntry(i);
+            if (tlbEntry.valid) {
+                Lib.debug(dbgProcess, String.valueOf(tlbEntry.vpn) + " -> " + String.valueOf(tlbEntry.ppn));
+            }
         }
     }
 
@@ -115,4 +134,6 @@ public class Swapper {
     private static int count = 0;
 
     private Lock lock = new Lock();
+
+    private static final char dbgProcess = 'a';
 }

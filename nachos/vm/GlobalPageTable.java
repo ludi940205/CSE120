@@ -74,7 +74,8 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
         }
         if (!entry.valid)
             swapper.freePageFromDisk(pair);
-        freePages.add(entry.ppn);
+        if (invertedPageTable[entry.ppn] != null)
+            freePages.add(entry.ppn);
         remove(pair);
         invertedPageTable[entry.ppn] = null;
         for (int i = 0; i < Machine.processor().getTLBSize(); i++) {

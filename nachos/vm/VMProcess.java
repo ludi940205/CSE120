@@ -74,8 +74,11 @@ public class VMProcess extends UserProcess {
 		Processor processor = Machine.processor();
 		for (int i = 0; i < processor.getTLBSize(); i++) {
 			TranslationEntry tlbEntry = processor.readTLBEntry(i);
-			tlbEntry.valid = false;
-			processor.writeTLBEntry(i, tlbEntry);
+			if (tlbEntry.valid) {
+				tlbEntry.valid = false;
+				processor.writeTLBEntry(i, tlbEntry);
+//				Lib.debug(dbgProcess, "swap out TLB (" + String.valueOf(tlbEntry.vpn) + ", " + String.valueOf(tlbEntry.ppn) + ")");
+			}
 		}
 	}
 
@@ -168,6 +171,7 @@ public class VMProcess extends UserProcess {
 			pageEntry = lazyLoad(vpn);
 		if (pageEntry.valid)
 			processor.writeTLBEntry(tlbVictim, pageEntry);
+		Lib.debug(dbgProcess, "swap in TLB (" + String.valueOf(pageEntry.vpn) + ", " + String.valueOf(pageEntry.ppn) + ")");
 //		Lib.assertTrue(checkTLB());
 	}
 
