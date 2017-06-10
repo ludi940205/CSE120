@@ -167,6 +167,7 @@ public class VMProcess extends UserProcess {
 
 	private void handleTLBMiss(int vAddr) {
 		Processor processor = Machine.processor();
+		tlbLock.acquire();
 		int tlbVictim = getTLBVictim();
 		int vpn = Processor.pageFromAddress(vAddr);
 		TranslationEntry pageEntry = VMKernel.globalPageTable.getPage(new Pair(processID(), vpn));
@@ -174,6 +175,9 @@ public class VMProcess extends UserProcess {
 			pageEntry = lazyLoad(vpn);
 		if (pageEntry != null && pageEntry.valid)
 			processor.writeTLBEntry(tlbVictim, pageEntry);
+		else
+			handleExit(-1);
+		tlbLock.release();
 //		Lib.debug(dbgProcess, "swap in TLB (" + String.valueOf(pageEntry.vpn) + ", " + String.valueOf(pageEntry.ppn) + ")");
 //		Lib.assertTrue(checkTLB());
 	}
@@ -224,6 +228,8 @@ public class VMProcess extends UserProcess {
 	}
 
 	private Lock lazyLoadLock = new Lock();
+
+	private Lock tlbLock = new Lock();
 
 	private TranslationEntry[] previousTLBState;
 
