@@ -116,41 +116,53 @@ public class VMProcess extends UserProcess {
 
 	@Override
 	protected int pinVirtualPage(int vpn, boolean isUserWrite) {
-		if (vpn < 0 || vpn >= numPages)
-			return -1;
-		if (lazyLoad(vpn) == null)
-			return -1;
+//		pinLock.acquire();
+//		tlbLock.acquire();
 
-		Pair pair = new Pair(processID(), vpn);
-		TranslationEntry entry = VMKernel.globalPageTable.getPage(pair);
-		VMKernel.globalPageTable.pinPage(pair);
-		if (!entry.valid || entry.vpn != vpn)
-			return -1;
-
-		if (isUserWrite) {
-			if (entry.readOnly)
+		try {
+			if (vpn < 0 || vpn >= numPages)
 				return -1;
-			entry.dirty = true;
+			if (lazyLoad(vpn) == null)
+				return -1;
+
+			Pair pair = new Pair(processID(), vpn);
+			TranslationEntry entry = VMKernel.globalPageTable.getPage(pair);
+			VMKernel.globalPageTable.pinPage(pair);
+			if (!entry.valid || entry.vpn != vpn)
+				return -1;
+
+			if (isUserWrite) {
+				if (entry.readOnly)
+					return -1;
+				entry.dirty = true;
+			}
+
+			entry.used = true;
+			return entry.ppn;
 		}
-
-		entry.used = true;
-
-//		synchronizeToTLB();
-
-		return entry.ppn;
+		finally {
+//			tlbLock.release();
+//			pinLock.release();
+		}
 	}
 
 	@Override
 	protected void unpinVirtualPage(int vpn) {
+		pinLock.acquire();
 		VMKernel.globalPageTable.unpinPage(new Pair(processID(), vpn));
+		pinLock.release();
 	}
 
 	private void synchronizeToTLB() {
+//		tlbLock.acquire();
 		VMKernel.globalPageTable.synchronizeToTLB(processID());
+//		tlbLock.release();
 	}
 
 	private void synchronizeFromTLB() {
+//		tlbLock.acquire();
 		VMKernel.globalPageTable.synchronizeFromTLB(processID());
+//		tlbLock.release();
 	}
 
 	private int getTLBVictim() {
@@ -230,6 +242,8 @@ public class VMProcess extends UserProcess {
 	private Lock lazyLoadLock = new Lock();
 
 	private Lock tlbLock = new Lock();
+
+	private Lock pinLock = new Lock();
 
 	private TranslationEntry[] previousTLBState;
 

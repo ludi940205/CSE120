@@ -95,6 +95,7 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
     }
 
     void synchronizeFromTLB(int pid) {
+//        lock.acquire();
         Processor processor = Machine.processor();
         for (int i = 0; i < processor.getTLBSize(); i++) {
             TranslationEntry tlbEntry = Machine.processor().readTLBEntry(i);
@@ -105,9 +106,11 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
                 pageTableEntry.dirty = tlbEntry.dirty;
             }
         }
+//        lock.release();
     }
 
     void synchronizeToTLB(int pid) {
+//        lock.acquire();
         Processor processor = Machine.processor();
         for (int i = 0; i < processor.getTLBSize(); i++) {
             TranslationEntry tlbEntry = Machine.processor().readTLBEntry(i);
@@ -119,16 +122,18 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
                 processor.writeTLBEntry(i, tlbEntry);
             }
         }
+//        lock.release();
     }
 
     private int selectVictim() {
-//        victim = Math.max(victim, invertedPageTable.length-1);
+//        victimLock.acquire();
         while (true) {
             TranslationEntry entry = get(invertedPageTable[victim]);
             if (entry != null) {
                 if (!entry.used && !pinnedPages.contains(invertedPageTable[victim])) {
                     int toEvict = victim;
                     victim = (victim + 1) % invertedPageTable.length;
+//                    victimLock.release();
                     return toEvict;
                 }
                 entry.used = false;
@@ -172,6 +177,7 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
     private LinkedList<Integer> freePages;
 
     private Lock lock = new Lock();
+    private Lock victimLock = new Lock();
 
     private Swapper swapper;
 }
