@@ -21,21 +21,19 @@ public class Swapper {
     }
 
     private int findFreePosition() {
-//        lock.acquire();
         if (freeList.isEmpty())
             freeList.add(currSize++);
-//        lock.release();
         return freeList.removeFirst();
     }
 
     public void freePageFromDisk(Pair pair) {
-//        lock.acquire();
+        lock.acquire();
 
         int pos = table.get(pair);
         freeList.add(pos);
         table.remove(pair);
 
-//        lock.release();
+        lock.release();
     }
 
     //swap from disk to memory, return the resulting ppn
@@ -44,7 +42,7 @@ public class Swapper {
         Lib.assertTrue(!VMKernel.globalPageTable.isPageValid(inEntry.ppn));
         Lib.assertTrue(table.containsKey(inPair));
 
-//        lock.acquire();
+        lock.acquire();
 
         int ppn = inEntry.ppn;
         if (table.containsKey(inPair)) {
@@ -62,13 +60,13 @@ public class Swapper {
         inEntry.valid = true;
         inEntry.used = false;
         inEntry.dirty = false;
-//        lock.release();
+        lock.release();
 
         return true;
     }
 
     public boolean swapFromMemoryToDisk(Pair outPair, TranslationEntry outEntry) {
-//        lock.acquire();
+        lock.acquire();
 
         int diskPos;
 
@@ -99,7 +97,7 @@ public class Swapper {
             outEntry.valid = false;
             outEntry.dirty = false;
             outEntry.used = false;
-//            lock.release();
+            lock.release();
         }
     }
 

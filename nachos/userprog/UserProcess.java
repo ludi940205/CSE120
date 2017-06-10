@@ -163,7 +163,7 @@ public class UserProcess {
 
 			int ppn = pinVirtualPage(vpn, false);
 			if (ppn == -1)
-				break;
+				return -1;
 
 			System.arraycopy(memory, ppn*pageSize + off, data, offset,
 					transfer);
@@ -222,7 +222,7 @@ public class UserProcess {
 
 			int ppn = pinVirtualPage(vpn, true);
 			if (ppn == -1)
-				break;
+				return -1;
 
 			System.arraycopy(data, offset, memory, ppn*pageSize + off,
 					transfer);
@@ -582,6 +582,8 @@ public class UserProcess {
 			}
 
 			actual = writeVirtualMemory(vaddrBuffer, ioBuffer, 0, actual);
+			if (actual == -1)
+				return -1;
 
 			vaddrBuffer += actual;
 			length -= actual;
@@ -609,6 +611,8 @@ public class UserProcess {
 			int transfer = Math.min(length, ioBufferSize);
 
 			int actual = readVirtualMemory(vaddrBuffer, ioBuffer, 0, transfer);
+			if (actual == -1)
+				return -1;
 
 			actual = of.write(ioBuffer, 0, actual);
 			if (actual == -1) {

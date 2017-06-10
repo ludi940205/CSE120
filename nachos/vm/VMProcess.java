@@ -168,7 +168,7 @@ public class VMProcess extends UserProcess {
 			pageEntry = lazyLoad(vpn);
 		if (pageEntry.valid)
 			processor.writeTLBEntry(tlbVictim, pageEntry);
-		Lib.assertTrue(checkTLB());
+//		Lib.assertTrue(checkTLB());
 	}
 
 	public boolean checkTLB() {
