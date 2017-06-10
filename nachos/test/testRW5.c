@@ -9,3 +9,7 @@ void assertMsg(int arg, char* msg) {
         exit(-1);
     }
 }
+
+int main() {
+	
+}

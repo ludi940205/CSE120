@@ -21,6 +21,7 @@ out/
 *.txt
 *.out
 MEMBERS
+swap
 mips-x86.linux-xgcc/
 
 nachos/MEMBERS
