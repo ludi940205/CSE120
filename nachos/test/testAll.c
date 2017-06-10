@@ -264,7 +264,7 @@ void testFileSystemPressure() {
 void testMultiThreadRW() {
     char* executable;
     char* argv[2];
-    int pid, argc;
+    int pid, argc, i;
 
     executable = "cp.coff";
     argv[0] = executable;
