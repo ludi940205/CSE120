@@ -62,9 +62,9 @@ public class Swapper {
         inEntry.dirty = false;
         lock.release();
 
-        Lib.debug(dbgProcess, "swap (" + String.valueOf(inEntry.vpn) + ", " +
-                String.valueOf(inEntry.ppn) + ") from disk to memory");
-        logTLB();
+//        Lib.debug(dbgProcess, "swap (" + String.valueOf(inEntry.vpn) + ", " +
+//                String.valueOf(inEntry.ppn) + ") from disk to memory");
+//        logTLB();
 
         return true;
     }
@@ -103,9 +103,9 @@ public class Swapper {
             outEntry.used = false;
             lock.release();
 
-            Lib.debug(dbgProcess, "swap (" + String.valueOf(outEntry.vpn) + ", " +
-                    String.valueOf(outEntry.ppn) + ") from memory to disk");
-            logTLB();
+//            Lib.debug(dbgProcess, "swap (" + String.valueOf(outEntry.vpn) + ", " +
+//                    String.valueOf(outEntry.ppn) + ") from memory to disk");
+//            logTLB();
         }
     }
 

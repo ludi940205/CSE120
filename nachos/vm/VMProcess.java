@@ -84,31 +84,34 @@ public class VMProcess extends UserProcess {
 
 	protected TranslationEntry lazyLoad(int vpn) {
 		lazyLoadLock.acquire();
-		if (vpn < 0 || vpn >= numPages)
-			return null;
-		TranslationEntry entry = VMKernel.globalPageTable.getPage(new Pair(processID(), vpn));
-		if (entry == null) {
-			TranslationEntry newEntry = new TranslationEntry(vpn, -1,
-					true, false, false, false);
-			if (vpn < numPages - stackPages - 1) {
-				int s = 0;
-				for (; s < coff.getNumSections(); s++)
-					if (coff.getSection(s).getFirstVPN() > vpn)
-						break;
-				CoffSection section = coff.getSection(s - 1);
-				newEntry.readOnly = section.isReadOnly();
-				VMKernel.globalPageTable.insertPage(new Pair(processID(), vpn), newEntry);
-				section.loadPage(vpn - section.getFirstVPN(), newEntry.ppn);
+		try {
+			if (vpn < 0 || vpn >= numPages)
+				return null;
+			TranslationEntry entry = VMKernel.globalPageTable.getPage(new Pair(processID(), vpn));
+			if (entry == null) {
+				TranslationEntry newEntry = new TranslationEntry(vpn, -1,
+						true, false, false, false);
+				if (vpn < numPages - stackPages - 1) {
+					int s = 0;
+					for (; s < coff.getNumSections(); s++)
+						if (coff.getSection(s).getFirstVPN() > vpn)
+							break;
+					CoffSection section = coff.getSection(s - 1);
+					newEntry.readOnly = section.isReadOnly();
+					VMKernel.globalPageTable.insertPage(new Pair(processID(), vpn), newEntry);
+					section.loadPage(vpn - section.getFirstVPN(), newEntry.ppn);
+				} else {
+					VMKernel.globalPageTable.insertPage(new Pair(processID(), vpn), newEntry);
+					Arrays.fill(Machine.processor().getMemory(),
+							newEntry.ppn * pageSize, (newEntry.ppn + 1) * pageSize, (byte) 0);
+				}
+				entry = newEntry;
 			}
-			else {
-				VMKernel.globalPageTable.insertPage(new Pair(processID(), vpn), newEntry);
-				Arrays.fill(Machine.processor().getMemory(),
-						newEntry.ppn * pageSize, (newEntry.ppn+1) * pageSize, (byte) 0);
-			}
-			entry = newEntry;
+			return entry;
 		}
-		lazyLoadLock.release();
-		return entry;
+		finally {
+			lazyLoadLock.release();
+		}
 	}
 
 	@Override
@@ -169,9 +172,9 @@ public class VMProcess extends UserProcess {
 		TranslationEntry pageEntry = VMKernel.globalPageTable.getPage(new Pair(processID(), vpn));
 		if (pageEntry == null)
 			pageEntry = lazyLoad(vpn);
-		if (pageEntry.valid)
+		if (pageEntry != null && pageEntry.valid)
 			processor.writeTLBEntry(tlbVictim, pageEntry);
-		Lib.debug(dbgProcess, "swap in TLB (" + String.valueOf(pageEntry.vpn) + ", " + String.valueOf(pageEntry.ppn) + ")");
+//		Lib.debug(dbgProcess, "swap in TLB (" + String.valueOf(pageEntry.vpn) + ", " + String.valueOf(pageEntry.ppn) + ")");
 //		Lib.assertTrue(checkTLB());
 	}
 
