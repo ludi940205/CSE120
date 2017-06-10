@@ -18,10 +18,7 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
         swapper = new Swapper();
     }
 
-    // insert a page into global page table, if no place available, swap out a page to disk
-    void insertPage(Pair pair, TranslationEntry entry) {
-        lock.acquire();
-
+    private void forceFindFreePage(TranslationEntry entry) {
         if (freePages.isEmpty()) {
             int ppn = selectVictim();
             Pair victim = invertedPageTable[ppn];
@@ -31,10 +28,16 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
         }
         else
             entry.ppn = freePages.removeFirst();
+    }
+
+    // insert a page into global page table, if no place available, swap out a page to disk
+    void insertPage(Pair pair, TranslationEntry entry) {
+        lock.acquire();
+
+        forceFindFreePage(entry);
         entry.valid = true;
         put(pair, entry);
         invertedPageTable[entry.ppn] = pair;
-
 //        checkTLB();
 
         lock.release();
@@ -45,20 +48,11 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
         lock.acquire();
         TranslationEntry entry = get(pair);
         if (entry != null && !entry.valid) {
-            if (freePages.isEmpty()) {
-                int ppn = selectVictim();
-                Pair victim = invertedPageTable[ppn];
-                TranslationEntry victimEntry = get(victim);
-                swapper.swapFromMemoryToDisk(victim, victimEntry);
-                entry.ppn = victimEntry.ppn;
-            }
-            else
-                entry.ppn = freePages.removeFirst();
+            forceFindFreePage(entry);
             swapper.swapFromDiskToMemory(pair, entry);
             put(pair, entry);
             invertedPageTable[entry.ppn] = pair;
         }
-
 //        checkTLB();
 
         lock.release();
@@ -74,7 +68,6 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
         }
         if (!entry.valid)
             swapper.freePageFromDisk(pair);
-//        if (invertedPageTable[entry.ppn] != null)
         else {
             freePages.add(entry.ppn);
             invertedPageTable[entry.ppn] = null;
