@@ -1,0 +1,11 @@
+Most work are done in two separated java class files: GlobalPageTable and Swapper. The global page table keeps very pages active, and the swapper swap pages between memory and disk on demand.
+
+Upon TLB miss or read/write from memory, lazyLoad() is called to find the expected page. This function serves all the hierarchical memory load task from disk to memory to TLB. It calls glocal page table for a page entry. In this case, the global page table ensures that a valid page is returned, so it will swaps a page out when there is no memory available. The swapper class swap pages in and out, and in the meanwhile keep TLB synchronized.
+
+Upon context switch, the TLB entry are saved. They are restored when a restoreState() is called. Another thing that restoreState() does is synchronize TLB to page table, so everything that the user process does is reflected in kernel.
+
+The race condition is dealt using a few locks when lazy load and handle TLB loss. Also, GlobalPageTable and Swapper are written in monitor style to prevent race condition.
+
+Group member:
+Di Lu, 		write code
+Xingyu Gu, 	test
