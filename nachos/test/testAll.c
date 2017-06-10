@@ -274,8 +274,8 @@ void testMultiThreadRW() {
 
     for (i = 0; i < 5; i++) {
         argv[2][10] = i + '0';
-        pid[i] = exec(executable, argc, argv);
-        assertMsg(pid[i] != -1, "MULTI THREAD READ WRITE TEST: Unable to exec cp.coff\n");
+        pid = exec(executable, argc, argv);
+        assertMsg(pid != -1, "MULTI THREAD READ WRITE TEST: Unable to exec cp.coff\n");
     }
 
     executable = "cat.coff";
@@ -285,8 +285,8 @@ void testMultiThreadRW() {
 
     for (i = 0; i < 5; i++) {
         argv[2][10] = i + '0';
-        pid[i] = exec(executable, argc, argv);
-        assertMsg(pid[i] != -1, "MULTI THREAD READ WRITE TEST: Unable to exec cat.coff\n");
+        pid = exec(executable, argc, argv);
+        assertMsg(pid != -1, "MULTI THREAD READ WRITE TEST: Unable to exec cat.coff\n");
     }
 
     printf("MULTI THREAD READ WRITE TEST SUCCESS\n");
