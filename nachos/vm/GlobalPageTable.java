@@ -87,11 +87,15 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
     }
 
     void pinPage(Pair pair) {
+        lock.acquire();
         pinnedPages.add(pair);
+        lock.release();
     }
 
     void unpinPage(Pair pair) {
+        lock.acquire();
         pinnedPages.remove(pair);
+        lock.release();
     }
 
     void synchronizeFromTLB(int pid) {

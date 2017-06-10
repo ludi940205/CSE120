@@ -116,8 +116,8 @@ public class VMProcess extends UserProcess {
 
 	@Override
 	protected int pinVirtualPage(int vpn, boolean isUserWrite) {
-//		pinLock.acquire();
-//		tlbLock.acquire();
+		pinLock.acquire();
+		tlbLock.acquire();
 
 		try {
 			if (vpn < 0 || vpn >= numPages)
@@ -141,8 +141,8 @@ public class VMProcess extends UserProcess {
 			return entry.ppn;
 		}
 		finally {
-//			tlbLock.release();
-//			pinLock.release();
+			tlbLock.release();
+			pinLock.release();
 		}
 	}
 
@@ -239,11 +239,11 @@ public class VMProcess extends UserProcess {
 		}
 	}
 
-	private Lock lazyLoadLock = new Lock();
+	private static Lock lazyLoadLock = new Lock();
 
-	private Lock tlbLock = new Lock();
+	private static Lock tlbLock = new Lock();
 
-	private Lock pinLock = new Lock();
+	private static Lock pinLock = new Lock();
 
 	private TranslationEntry[] previousTLBState;
 
