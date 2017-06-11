@@ -21,6 +21,7 @@ out/
 *.txt
 *.out
 MEMBERS
+*_copy*.h
 swap
 mips-x86.linux-xgcc/
 
