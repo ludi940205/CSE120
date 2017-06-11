@@ -51,17 +51,17 @@ int main() {
         assertMsg(pid != -1, "MULTI THREAD READ WRITE TEST: Unable to exec cp.coff\n");
     }
 
-    executable = "cat.coff";
-    argv[0] = executable;
-    argv[1] = "syscall_copy0.h";
-    argc = 2;
+    // executable = "cat.coff";
+    // argv[0] = executable;
+    // argv[1] = "syscall_copy0.h";
+    // argc = 2;
 
-    for (i = 0; i < 5; i++) {
-        filename[12] = i + '0';
-        argv[2] = filename;
-        pid = exec(executable, argc, argv);
-        assertMsg(pid != -1, "MULTI THREAD READ WRITE TEST: Unable to exec cat.coff\n");
-    }
+    // for (i = 0; i < 5; i++) {
+    //     filename[12] = i + '0';
+    //     argv[2] = filename;
+    //     pid = exec(executable, argc, argv);
+    //     assertMsg(pid != -1, "MULTI THREAD READ WRITE TEST: Unable to exec cat.coff\n");
+    // }
 
     printf("MULTI THREAD READ WRITE TEST SUCCESS\n");
 }
