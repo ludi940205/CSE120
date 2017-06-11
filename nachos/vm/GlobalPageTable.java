@@ -38,7 +38,6 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
         entry.valid = true;
         put(pair, entry);
         invertedPageTable[entry.ppn] = pair;
-//        checkTLB();
 
         lock.release();
     }
@@ -61,6 +60,7 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
 
     void removePage(Pair pair) {
         lock.acquire();
+
         TranslationEntry entry = get(pair);
         if (entry == null) {
             lock.release();
@@ -81,25 +81,23 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
             Machine.processor().writeTLBEntry(i, tlbEntry);
         }
 
-//        checkTLB();
-
         lock.release();
     }
 
     void pinPage(Pair pair) {
-        lock.acquire();
+        pinLock.acquire();
         pinnedPages.add(pair);
-        lock.release();
+        pinLock.release();
     }
 
     void unpinPage(Pair pair) {
-        lock.acquire();
+        pinLock.acquire();
         pinnedPages.remove(pair);
-        lock.release();
+        pinCondition.wakeAll();
+        pinLock.release();
     }
 
     void synchronizeFromTLB(int pid) {
-//        lock.acquire();
         Processor processor = Machine.processor();
         for (int i = 0; i < processor.getTLBSize(); i++) {
             TranslationEntry tlbEntry = Machine.processor().readTLBEntry(i);
@@ -110,11 +108,9 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
                 pageTableEntry.dirty = tlbEntry.dirty;
             }
         }
-//        lock.release();
     }
 
     void synchronizeToTLB(int pid) {
-//        lock.acquire();
         Processor processor = Machine.processor();
         for (int i = 0; i < processor.getTLBSize(); i++) {
             TranslationEntry tlbEntry = Machine.processor().readTLBEntry(i);
@@ -126,10 +122,14 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
                 processor.writeTLBEntry(i, tlbEntry);
             }
         }
-//        lock.release();
     }
 
     private int selectVictim() {
+        pinLock.acquire();
+        while (pinnedPages.size() == Machine.processor().getNumPhysPages()) {
+            pinCondition.sleep();
+        }
+        pinLock.release();
 //        victimLock.acquire();
         while (true) {
             TranslationEntry entry = get(invertedPageTable[victim]);
@@ -181,7 +181,10 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
     private LinkedList<Integer> freePages;
 
     private Lock lock = new Lock();
-    private Lock victimLock = new Lock();
+
+    private Lock pinLock = new Lock();
+
+    private Condition pinCondition = new Condition(pinLock);
 
     private Swapper swapper;
 }

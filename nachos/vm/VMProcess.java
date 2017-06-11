@@ -83,7 +83,7 @@ public class VMProcess extends UserProcess {
 	}
 
 	protected TranslationEntry lazyLoad(int vpn) {
-		lazyLoadLock.acquire();
+//		lazyLoadLock.acquire();
 		try {
 			if (vpn < 0 || vpn >= numPages)
 				return null;
@@ -110,14 +110,14 @@ public class VMProcess extends UserProcess {
 			return entry;
 		}
 		finally {
-			lazyLoadLock.release();
+//			lazyLoadLock.release();
 		}
 	}
 
 	@Override
 	protected int pinVirtualPage(int vpn, boolean isUserWrite) {
-		pinLock.acquire();
-		tlbLock.acquire();
+//		pinLock.acquire();
+//		tlbLock.acquire();
 
 		try {
 			if (vpn < 0 || vpn >= numPages)
@@ -141,16 +141,16 @@ public class VMProcess extends UserProcess {
 			return entry.ppn;
 		}
 		finally {
-			tlbLock.release();
-			pinLock.release();
+//			tlbLock.release();
+//			pinLock.release();
 		}
 	}
 
 	@Override
 	protected void unpinVirtualPage(int vpn) {
-		pinLock.acquire();
+//		pinLock.acquire();
 		VMKernel.globalPageTable.unpinPage(new Pair(processID(), vpn));
-		pinLock.release();
+//		pinLock.release();
 	}
 
 	private void synchronizeToTLB() {
@@ -179,7 +179,6 @@ public class VMProcess extends UserProcess {
 
 	private void handleTLBMiss(int vAddr) {
 		Processor processor = Machine.processor();
-		tlbLock.acquire();
 		int tlbVictim = getTLBVictim();
 		int vpn = Processor.pageFromAddress(vAddr);
 		TranslationEntry pageEntry = VMKernel.globalPageTable.getPage(new Pair(processID(), vpn));
@@ -189,7 +188,6 @@ public class VMProcess extends UserProcess {
 			processor.writeTLBEntry(tlbVictim, pageEntry);
 		else
 			handleExit(-1);
-		tlbLock.release();
 //		Lib.debug(dbgProcess, "swap in TLB (" + String.valueOf(pageEntry.vpn) + ", " + String.valueOf(pageEntry.ppn) + ")");
 //		Lib.assertTrue(checkTLB());
 	}
@@ -239,11 +237,11 @@ public class VMProcess extends UserProcess {
 		}
 	}
 
-	private static Lock lazyLoadLock = new Lock();
-
-	private static Lock tlbLock = new Lock();
-
-	private static Lock pinLock = new Lock();
+//	private static Lock lazyLoadLock = new Lock();
+//
+//	private static Lock tlbLock = new Lock();
+//
+//	private static Lock pinLock = new Lock();
 
 	private TranslationEntry[] previousTLBState;
 

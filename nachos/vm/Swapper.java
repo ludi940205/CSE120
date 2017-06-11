@@ -27,13 +27,13 @@ public class Swapper {
     }
 
     public void freePageFromDisk(Pair pair) {
-        lock.acquire();
+//        lock.acquire();
 
         int pos = table.get(pair);
         freeList.add(pos);
         table.remove(pair);
 
-        lock.release();
+//        lock.release();
     }
 
     //swap from disk to memory, return the resulting ppn
@@ -42,7 +42,7 @@ public class Swapper {
         Lib.assertTrue(!VMKernel.globalPageTable.isPageValid(inEntry.ppn));
         Lib.assertTrue(table.containsKey(inPair));
 
-        lock.acquire();
+//        lock.acquire();
 
         int ppn = inEntry.ppn;
         if (table.containsKey(inPair)) {
@@ -60,7 +60,7 @@ public class Swapper {
         inEntry.valid = true;
         inEntry.used = false;
         inEntry.dirty = false;
-        lock.release();
+//        lock.release();
 
 //        Lib.debug(dbgProcess, "swap (" + String.valueOf(inEntry.vpn) + ", " +
 //                String.valueOf(inEntry.ppn) + ") from disk to memory");
@@ -70,7 +70,7 @@ public class Swapper {
     }
 
     public boolean swapFromMemoryToDisk(Pair outPair, TranslationEntry outEntry) {
-        lock.acquire();
+//        lock.acquire();
 
         int diskPos;
 
@@ -101,7 +101,7 @@ public class Swapper {
             outEntry.valid = false;
             outEntry.dirty = false;
             outEntry.used = false;
-            lock.release();
+//            lock.release();
 
 //            Lib.debug(dbgProcess, "swap (" + String.valueOf(outEntry.vpn) + ", " +
 //                    String.valueOf(outEntry.ppn) + ") from memory to disk");
@@ -133,7 +133,7 @@ public class Swapper {
 
     private static int count = 0;
 
-    private Lock lock = new Lock();
+//    private Lock lock = new Lock();
 
     private static final char dbgProcess = 'a';
 }
