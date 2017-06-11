@@ -11,34 +11,10 @@ void assertMsg(int arg, char* msg) {
 }
 
 int main() {
-	// char* executable;
- //    char* argv[3];
- //    char arg[20] = "write_copy0.out";
- //    int pid[MAXPROCESS], argc, i, j, exitstatus;
-
- //    executable = "cp.coff";
- //    argv[0] = executable;
- //    argv[1] = "write.out";
- //    argv[2] = "write_copy0.out";
- //    argc = 3;
-
- //    for (i = 0; i <  MAXPROCESS; i++) {
- //    	arg[10] = i + '0';
- //    	argv[2] = arg;
- //        pid[i] = exec(executable, argc, argv);
- //        // join(pid[i], &exitstatus);
- //        assertMsg(pid[i] != -1, "PID TEST: Unable to exec cp.coff\n");
-    
- //        // for (j = 0; j < i; ++j)
- //        //     assertMsg(pid[j] == -1 || pid[j] != pid[i], "PID TEST: pid equals");
- //    }
-
- //    printf("PID TEST SUCCESS\n");
-	
-    char* executable;
+	char* executable;
     char* argv[3];
     char arg[20] = "write_copy0.out";
-    int pid, argc, i;
+    int pid[MAXPROCESS], argc, i, j, exitstatus;
 
     executable = "cp.coff";
     argv[0] = executable;
@@ -46,24 +22,48 @@ int main() {
     argv[2] = "write_copy0.out";
     argc = 3;
 
-    for (i = 0; i < 5; i++) {
-        arg[10] = i + '0';
+    for (i = 0; i <  MAXPROCESS; i++) {
+    	arg[10] = i + '0';
     	argv[2] = arg;
-        pid = exec(executable, argc, argv);
-        assertMsg(pid != -1, "MULTI THREAD READ WRITE TEST: Unable to exec cp.coff\n");
+        pid[i] = exec(executable, argc, argv);
+        // join(pid[i], &exitstatus);
+        assertMsg(pid[i] != -1, "PID TEST: Unable to exec cp.coff\n");
+    
+        // for (j = 0; j < i; ++j)
+        //     assertMsg(pid[j] == -1 || pid[j] != pid[i], "PID TEST: pid equals");
     }
 
-    executable = "cat.coff";
-    argv[0] = executable;
-    argv[1] = "write_copy0.out";
-    argc = 2;
+    printf("PID TEST SUCCESS\n");
+	
+    // char* executable;
+    // char* argv[3];
+    // char arg[20] = "write_copy0.out";
+    // int pid, argc, i;
 
-    for (i = 0; i < 5; i++) {
-        arg[10] = i + '0';
-    	argv[1] = arg;
-        pid = exec(executable, argc, argv);
-        assertMsg(pid != -1, "MULTI THREAD READ WRITE TEST: Unable to exec cat.coff\n");
-    }
+    // executable = "cp.coff";
+    // argv[0] = executable;
+    // argv[1] = "write.out";
+    // argv[2] = "write_copy0.out";
+    // argc = 3;
 
-    printf("MULTI THREAD READ WRITE TEST SUCCESS\n");
+    // for (i = 0; i < 5; i++) {
+    //     arg[10] = i + '0';
+    // 	argv[2] = arg;
+    //     pid = exec(executable, argc, argv);
+    //     assertMsg(pid != -1, "MULTI THREAD READ WRITE TEST: Unable to exec cp.coff\n");
+    // }
+
+    // executable = "cat.coff";
+    // argv[0] = executable;
+    // argv[1] = "write_copy0.out";
+    // argc = 2;
+
+    // for (i = 0; i < 5; i++) {
+    //     arg[10] = i + '0';
+    // 	argv[1] = arg;
+    //     pid = exec(executable, argc, argv);
+    //     assertMsg(pid != -1, "MULTI THREAD READ WRITE TEST: Unable to exec cat.coff\n");
+    // }
+
+    // printf("MULTI THREAD READ WRITE TEST SUCCESS\n");
 }
