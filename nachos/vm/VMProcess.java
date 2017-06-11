@@ -178,6 +178,7 @@ public class VMProcess extends UserProcess {
 	}
 
 	private void handleTLBMiss(int vAddr) {
+		tlbLock.acquire();
 		Processor processor = Machine.processor();
 		int tlbVictim = getTLBVictim();
 		int vpn = Processor.pageFromAddress(vAddr);
@@ -188,6 +189,7 @@ public class VMProcess extends UserProcess {
 			processor.writeTLBEntry(tlbVictim, pageEntry);
 		else
 			handleExit(-1);
+		tlbLock.release();
 //		Lib.debug(dbgProcess, "swap in TLB (" + String.valueOf(pageEntry.vpn) + ", " + String.valueOf(pageEntry.ppn) + ")");
 //		Lib.assertTrue(checkTLB());
 	}
@@ -239,7 +241,7 @@ public class VMProcess extends UserProcess {
 
 //	private static Lock lazyLoadLock = new Lock();
 //
-//	private static Lock tlbLock = new Lock();
+	private static Lock tlbLock = new Lock();
 //
 //	private static Lock pinLock = new Lock();
 
