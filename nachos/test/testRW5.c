@@ -13,6 +13,7 @@ void assertMsg(int arg, char* msg) {
 int main() {
 	char* executable;
     char* argv[3];
+    char arg[20] = "write_copy0.out";
     int pid[MAXPROCESS], argc, i, j, exitstatus;
 
     executable = "cp.coff";
@@ -22,7 +23,8 @@ int main() {
     argc = 3;
 
     for (i = 0; i <  MAXPROCESS; i++) {
-    	argv[2][10] = i + '0';
+    	arg[10] = i + '0';
+    	argv[2] = arg;
         pid[i] = exec(executable, argc, argv);
         // join(pid[i], &exitstatus);
         assertMsg(pid[i] != -1, "PID TEST: Unable to exec cp.coff\n");
