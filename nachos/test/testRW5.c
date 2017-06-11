@@ -44,7 +44,7 @@ int main() {
     argv[2] = "syscall_copy0.h";
     argc = 3;
 
-    for (i = 0; i < 5; i++) {
+    for (i = 0; i < 10; i++) {
     	filename[12] = i + '0';
         argv[2] = filename;
         pid = exec(executable, argc, argv);
