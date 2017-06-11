@@ -52,7 +52,6 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
             put(pair, entry);
             invertedPageTable[entry.ppn] = pair;
         }
-//        checkTLB();
 
         lock.release();
         return entry;
@@ -130,14 +129,12 @@ class GlobalPageTable extends HashMap<Pair, TranslationEntry> {
             pinCondition.sleep();
         }
         pinLock.release();
-//        victimLock.acquire();
         while (true) {
             TranslationEntry entry = get(invertedPageTable[victim]);
             if (entry != null) {
                 if (!entry.used && !pinnedPages.contains(invertedPageTable[victim])) {
                     int toEvict = victim;
                     victim = (victim + 1) % invertedPageTable.length;
-//                    victimLock.release();
                     return toEvict;
                 }
                 entry.used = false;
