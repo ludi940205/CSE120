@@ -1,7 +1,7 @@
 #include "stdio.h"
 
 #define NULL        0
-#define MAXPROCESS  9
+#define MAXPROCESS  19
 
 void assertMsg(int arg, char* msg) {
     if (arg == 0) {
@@ -322,6 +322,6 @@ void testRoute(int id) {
 
 int main(int argc, char* argv[]) {
     int i;
-	for (i = 0; i < 7; i++)
+	for (i = 0; i < 8; i++)
         testRoute(i);
 }
