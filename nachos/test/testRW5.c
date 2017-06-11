@@ -13,18 +13,15 @@ void assertMsg(int arg, char* msg) {
 int main() {
 	char* executable;
     char* argv[3];
-    char arg[20] = "write_copy0.out";
     int pid[MAXPROCESS], argc, i, j, exitstatus;
 
     executable = "cp.coff";
     argv[0] = executable;
-    argv[1] = "write.out";
-    argv[2] = "write_copy0.out";
+    argv[1] = "syscall.h";
+    argv[2] = "syscall_copy.h";
     argc = 3;
 
     for (i = 0; i <  MAXPROCESS; i++) {
-    	arg[10] = i + '0';
-    	argv[2] = arg;
         pid[i] = exec(executable, argc, argv);
         // join(pid[i], &exitstatus);
         assertMsg(pid[i] != -1, "PID TEST: Unable to exec cp.coff\n");
@@ -34,10 +31,10 @@ int main() {
     }
 
     printf("PID TEST SUCCESS\n");
-	
+
+
     // char* executable;
     // char* argv[3];
-    // char arg[20] = "write_copy0.out";
     // int pid, argc, i;
 
     // executable = "cp.coff";
@@ -47,8 +44,7 @@ int main() {
     // argc = 3;
 
     // for (i = 0; i < 5; i++) {
-    //     arg[10] = i + '0';
-    // 	argv[2] = arg;
+    //     argv[2][10] = i + '0';
     //     pid = exec(executable, argc, argv);
     //     assertMsg(pid != -1, "MULTI THREAD READ WRITE TEST: Unable to exec cp.coff\n");
     // }
@@ -59,8 +55,7 @@ int main() {
     // argc = 2;
 
     // for (i = 0; i < 5; i++) {
-    //     arg[10] = i + '0';
-    // 	argv[1] = arg;
+    //     argv[2][10] = i + '0';
     //     pid = exec(executable, argc, argv);
     //     assertMsg(pid != -1, "MULTI THREAD READ WRITE TEST: Unable to exec cat.coff\n");
     // }

@@ -182,7 +182,7 @@ void testUnlink() {
     assertMsg(unlink(fileName) == 0, "UNLINK TEST: Unable to unlink\n");
     assertMsg(tryOpen(fileName) == 0, "UNLINK TEST: Can still open after unlink\n");
 
-    // assertMsg(unlink(fileName) == 0, "UNLINK TEST: Failed when issue unlink twice before actually deteting\n");
+    assertMsg(unlink(fileName) == 0, "UNLINK TEST: Failed when issue unlink twice before actually deteting\n");
 
     for (i = 0; i < 9; i++)
         close(fd[i]);
@@ -261,6 +261,41 @@ void testFileSystemPressure() {
     printf("FILE SYSTEM PRESSURE TEST SUCCESS\n");
 }
 
+void testMultiThreadRW() {
+        // char* executable;
+    // char* argv[3];
+    // char arg[20] = "write_copy0.out";
+    // int pid, argc, i;
+
+    // executable = "cp.coff";
+    // argv[0] = executable;
+    // argv[1] = "write.out";
+    // argv[2] = "write_copy0.out";
+    // argc = 3;
+
+    // for (i = 0; i < 5; i++) {
+    //     arg[10] = i + '0';
+    //  argv[2] = arg;
+    //     pid = exec(executable, argc, argv);
+    //     assertMsg(pid != -1, "MULTI THREAD READ WRITE TEST: Unable to exec cp.coff\n");
+    // }
+
+    // executable = "cat.coff";
+    // argv[0] = executable;
+    // argv[1] = "write_copy0.out";
+    // argc = 2;
+
+    // for (i = 0; i < 5; i++) {
+    //     arg[10] = i + '0';
+    //  argv[1] = arg;
+    //     pid = exec(executable, argc, argv);
+    //     assertMsg(pid != -1, "MULTI THREAD READ WRITE TEST: Unable to exec cat.coff\n");
+    // }
+
+    // printf("MULTI THREAD READ WRITE TEST SUCCESS\n");
+
+}
+
 void testRoute(int id) {
     switch (id) {
         case 0:
@@ -284,11 +319,14 @@ void testRoute(int id) {
         case 6:
             testUnlink();
             break;
+        case 7:
+            testMultiThreadRW();
+            break;
     }
 }
 
 int main(int argc, char* argv[]) {
     int i;
-	for (i = 0; i < 7; i++)
+	for (i = 0; i < 8; i++)
         testRoute(i);
 }
