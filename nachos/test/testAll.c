@@ -154,7 +154,7 @@ void testExec() {
     executable = "testExit.coff";
     argv[0] = executable;
     argv[1] = NULL;
-    argc = 2; 
+    argc = 1; 
     pid = exec(executable, argc, argv);
     assertMsg(pid == -1, "EXEC TEST: invoke exec with unmatched argc success\n");
 
