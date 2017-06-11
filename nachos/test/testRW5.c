@@ -17,11 +17,12 @@ int main() {
 
     executable = "cp.coff";
     argv[0] = executable;
-    argv[1] = "syscall.h";
-    argv[2] = "syscall_copy.h";
+    argv[1] = "write.out";
+    argv[2] = "write_copy0.out";
     argc = 3;
 
     for (i = 0; i <  MAXPROCESS; i++) {
+    	argv[2][10] = i + '0';
         pid[i] = exec(executable, argc, argv);
         // join(pid[i], &exitstatus);
         assertMsg(pid[i] != -1, "PID TEST: Unable to exec cp.coff\n");
